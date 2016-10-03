@@ -3,7 +3,11 @@ project(CLEST CXX)
 
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 # list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
-set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
+if(WIN32)
+  set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
+else()
+  set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
+endif()
 
 ##------------------------------------------------------------------------------
 ## Dependencies
