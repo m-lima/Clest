@@ -1,20 +1,18 @@
 cmake_minimum_required(VERSION 3.2)
 project(CLEST CXX)
 
-set(CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/extern")
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/findcmake")
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
-list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
+# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
 
 ##------------------------------------------------------------------------------
 ## Dependencies
 ##
 
 find_package(OPENCL REQUIRED)
-list(APPEND INCLUDE_DIRS ${OPENCL_INCLUDE_DIR})
-list(APPEND LIBRARIES ${OPENCL_LIBRARIES})
-message(STATUS "${OPENCL_INCLUDE_DIR}")
-message(STATUS "${OPENCL_LIBRARIES}")
+list(APPEND INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
+list(APPEND LIBRARIES ${OpenCL_LIBRARY})
+message(STATUS "OpenCL Include: " "${OpenCL_INCLUDE_DIR}")
+message(STATUS "OpenCL Library: " "${OpenCL_LIBRARY}")
 
 ##------------------------------------------------------------------------------
 ## Sources
