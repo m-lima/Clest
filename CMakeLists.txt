@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 project(CLEST CXX)
 
+message("Building for " ${CMAKE_SYSTEM_NAME} " using " ${CMAKE_TOOLCHAIN_FILE})
+
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 # list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
 if(WIN32)
@@ -30,7 +32,17 @@ message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
 ##
 
 set(SOURCES
-  src/main.cpp)
+  src/cpp/main.cpp
+  src/cpp/util.hpp
+  )
+
+set(OPENCL_SRC
+  src/opencl/main.cl
+  )
+
+if(MSVC)
+  list(APPEND SOURCES ${OPENCL_SRC})
+endif()
 
 ##------------------------------------------------------------------------------
 ## Targets
@@ -41,3 +53,15 @@ target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+
+##------------------------------------------------------------------------------
+## MSVC Specifics
+##
+
+if(MSVC)
+  source_group("OpenCL" FILES ${OPENCL_SRC})
+
+  if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.5)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT clest)
+  endif()
+endif()
