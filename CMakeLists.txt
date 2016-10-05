@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.2)
 project(CLEST CXX)
 
-message("Building for " ${CMAKE_SYSTEM_NAME} " using " ${CMAKE_TOOLCHAIN_FILE})
+if(APPLE)
+  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+endif()
+
+set(CPP_SRC_DIR "src/cpp")
+set(OPENCL_SRC_DIR "src/opencl")
 
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 # list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
@@ -32,17 +37,17 @@ message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
 ##
 
 set(SOURCES
-  src/cpp/main.cpp
-  src/cpp/util.hpp
+  ${CPP_SRC_DIR}/main.cpp
+  ${CPP_SRC_DIR}/util.hpp
   )
 
 set(OPENCL_SRC
-  src/opencl/fractal.cl
+  ${OPENCL_SRC_DIR}/fractal.cl
   )
 
-# if(MSVC)
+if(MSVC)
   list(APPEND SOURCES ${OPENCL_SRC})
-# endif()
+endif()
 
 ##------------------------------------------------------------------------------
 ## Targets
@@ -53,13 +58,18 @@ target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 
-add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl)
-add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/opencl ${CMAKE_BINARY_DIR}/opencl)
+##------------------------------------------------------------------------------
+## OpenCL
+##
 
-# add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl)
-# add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/opencl ${CMAKE_BINARY_DIR}/opencl)
-
-# set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+add_custom_target(always ALL DEPENDS copy_opencl_sources)
+add_custom_command(
+  OUTPUT copy_opencl_sources
+  COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/${OPENCL_SRC_DIR} ${CMAKE_BINARY_DIR}/opencl
+  DEPENDS always_execute
+  )
+add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 
 ##------------------------------------------------------------------------------
 ## MSVC Specifics

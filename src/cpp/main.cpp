@@ -36,7 +36,7 @@ int main() {
       std::vector<cl::Device> platformDevices;
 
       try {
-        platform->getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
+        platform->getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
 
         for (auto device = platformDevices.begin(); devices.empty() && device != platformDevices.end(); device++) {
           std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();

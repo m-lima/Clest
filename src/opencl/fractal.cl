@@ -5,7 +5,7 @@ __kernel void fractalSingle(__global unsigned char* output ) {
 }
 
 //Block cell
-__kernel void fractalBlock(__global unsigned char* output, const unsigned int iterations, const unsigned int repeat) {
+__kernel void fractalBlock(__global unsigned char* output, unsigned int iterations, unsigned int repeat) {
   unsigned int index = get_global_id(0);
   unsigned int i;
   unsigned int workingIndex;
