@@ -1,6 +1,9 @@
 #ifndef CLEST_UTIL_HPP
 #define CLEST_UTIL_HPP
 
+#include <string>
+#include <fstream>
+
 namespace clest {
   namespace util {
     bool listALL() {
@@ -31,9 +34,9 @@ namespace clest {
               boost::trim(name);
               std::cout << ' ';
               if ((device + 1) != platformDevices.end()) {
-                std::cout << L'\u2514';
+                std::cout << "├";
               } else {
-                std::cout << L'\u251C';
+                std::cout << "└";
               }
               std::cout << ' ' << name << std::endl;
             }
@@ -49,6 +52,16 @@ namespace clest {
       }
 
       return true;
+    }
+
+    std::string loadProgram(std::string input) {
+      std::ifstream stream(input.c_str());
+      if (!stream.is_open()) {
+        std::cerr << "Cannot open file: " << input << std::endl;
+        exit(1);
+      }
+
+      return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
     }
   }
 }

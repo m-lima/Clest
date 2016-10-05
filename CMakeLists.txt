@@ -37,12 +37,12 @@ set(SOURCES
   )
 
 set(OPENCL_SRC
-  src/opencl/main.cl
+  src/opencl/fractal.cl
   )
 
-if(MSVC)
+# if(MSVC)
   list(APPEND SOURCES ${OPENCL_SRC})
-endif()
+# endif()
 
 ##------------------------------------------------------------------------------
 ## Targets
@@ -52,7 +52,14 @@ add_executable(clest ${SOURCES})
 target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
-set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+
+add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl)
+add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/opencl ${CMAKE_BINARY_DIR}/opencl)
+
+# add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl)
+# add_custom_command(TARGET clest POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/opencl ${CMAKE_BINARY_DIR}/opencl)
+
+# set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
 ##------------------------------------------------------------------------------
 ## MSVC Specifics

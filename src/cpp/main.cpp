@@ -12,13 +12,15 @@
 using namespace clest;
 
 int main() {
+
+  // Verbose all platforms and devices
   if (!util::listALL()) {
     return 1;
   }
 
   std::cout << std::endl;
-  std::cout << std::endl;
 
+  // Choose device (and platform) that supports 64-bit
   try {
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
@@ -59,11 +61,46 @@ int main() {
       return 1;
     }
 
-    for (auto device = devices.begin(); device != devices.end(); device++) {
-      std::string name = device->getInfo<CL_DEVICE_NAME>();
-      boost::trim(name);
-      std::cout << std::setw(11) << "Acceptable:" << std::setw(5) << ' ' << name << std::endl;
+    cl::Device device = devices[0];
+    std::cout << "Going for: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+    cl::CommandQueue queue(context, device);
+
+    // Establishing global range
+    constexpr unsigned long long globalRepeats = 0x10000;
+    constexpr unsigned int workItemCount = 0x10000;
+    constexpr unsigned int workItemIterations = 0x100;
+    constexpr unsigned int dataSize = workItemCount * workItemIterations;
+    std::cout << "Global range: " << std::setprecision(2) << std::fixed << (globalRepeats * dataSize) / 1000000000.0 << " billion points" << std::endl;
+
+    // Create data (local array and remote buffer)
+    std::cout << "Creating local array";
+    std::vector<unsigned char> localArray(dataSize, 0);
+    std::cout << " and remote buffer.." << std::endl;
+    cl::Buffer remoteBuffer(context, CL_MEM_WRITE_ONLY, dataSize);
+
+    // Create program
+    std::cout << "Creating program.." << std::endl;
+    cl::Program program(context, util::loadProgram("opencl/fractal.cl"), true);
+    cl::make_kernel<cl::Buffer, unsigned int, unsigned int> main(program, "fractalBlock");
+
+    for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
+      // Enqueue
+      std::cout << "Enqueueing.." << std::endl;
+      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer, workItemIterations, repeat);
+
+      // Finishing
+      std::cout << "Finishing.." << std::endl;
+      queue.finish();
+
+      // Getting results
+      std::cout << "Getting results.." << std::endl;
+      cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
     }
+
+    std::cout << std::endl;
+    //for (size_t i = 0; i < localArray.size(); i++) {
+      //std::cout << static_cast<short>(localArray[i]) << ' ';
+    //}
 
   } catch (const cl::Error &err) {
     std::cerr
