@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
+#include <portaudio.h>
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <cl.hpp>
@@ -81,26 +82,29 @@ int main() {
     // Create program
     std::cout << "Creating program.." << std::endl;
     cl::Program program(context, util::loadProgram("opencl/fractal.cl"), true);
-    cl::make_kernel<cl::Buffer, unsigned int, unsigned int> main(program, "fractalBlock");
+    /* cl::make_kernel<cl::Buffer> main(program, "fractalSingle"); */
+    cl::make_kernel<cl::Buffer, unsigned int> main(program, "fractalBlock");
 
     for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
       // Enqueue
-      std::cout << "Enqueueing.." << std::endl;
-      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer, workItemIterations, repeat);
+      /* std::cout << "Enqueueing.." << std::endl; */
+      /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */
+      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer, workItemIterations);
 
       // Finishing
-      std::cout << "Finishing.." << std::endl;
+      /* std::cout << "Finishing.." << std::endl; */
       queue.finish();
 
       // Getting results
-      std::cout << "Getting results.." << std::endl;
+      /* std::cout << "Getting results.." << std::endl; */
       cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
+
+      for (size_t i = 0; i < localArray.size(); i++) {
+        std::cout << static_cast<short>(localArray[i]) << ' ';
+      }
     }
 
     std::cout << std::endl;
-    //for (size_t i = 0; i < localArray.size(); i++) {
-      //std::cout << static_cast<short>(localArray[i]) << ' ';
-    //}
 
   } catch (const cl::Error &err) {
     std::cerr

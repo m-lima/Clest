@@ -9,7 +9,8 @@ set(CPP_SRC_DIR "src/cpp")
 set(OPENCL_SRC_DIR "src/opencl")
 
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
-# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
+list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
+
 if(WIN32)
   set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
 else()
