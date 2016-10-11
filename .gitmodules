@@ -1,3 +1,6 @@
 [submodule "fmt"]
 	path = fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "lasLib"]
+	path = lasLib
+	url = https://github.com/m-lima/lasLib.git
