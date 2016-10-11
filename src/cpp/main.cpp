@@ -3,10 +3,10 @@
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
-/* #include <portaudio.h> */
+#include <LASlib/lasreader.hpp>
 
 #define __CL_ENABLE_EXCEPTIONS
-#include <cl.hpp>
+#include <CL/cl.hpp>
 
 #include "util.hpp"
 
@@ -16,6 +16,13 @@ int main() {
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
+    return 1;
+  }
+
+  LASreadOpener readOpener;
+  readOpener.set_file_name("Yo");
+  if (!readOpener.active()) {
+    std::cerr << "File not found." << std::endl;
     return 1;
   }
 

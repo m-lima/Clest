@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(CLEST CXX)
+project(Clest CXX)
 
 if(APPLE)
   set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
@@ -9,7 +9,6 @@ set(CPP_SRC_DIR "src/cpp")
 set(OPENCL_SRC_DIR "src/opencl")
 
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
-#list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
 
 if(WIN32)
   set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
@@ -33,12 +32,15 @@ list(APPEND LIBRARIES ${Boost_LIBRARY_DIR})
 message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
 
+add_subdirectory(fmt)
+list(APPEND INCLUDE_DIRS fmt)
+list(APPEND LIBRARIES fmt)
+
 ##------------------------------------------------------------------------------
-## libLAS
+## LAS
 ##
-add_subdirectory(libLAS)
-list(APPEND INCLUDE_DIRS ${LIBLAS_BUILD_OUTPUT_DIRECTORY})
-list(APPEND LIBRARIES ${LIBLAS_BUILD_OUTPUT_DIRECTORY})
+# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin/LASlib.lib")
+# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin/LASzip.dll")
 
 ##------------------------------------------------------------------------------
 ## Sources
@@ -66,6 +68,7 @@ add_custom_command(
   OUTPUT copy_opencl_sources
   COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/${OPENCL_SRC_DIR} ${CMAKE_BINARY_DIR}/opencl
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/lib/bin ${CMAKE_BINARY_DIR}
   DEPENDS always_execute
   )
 add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
