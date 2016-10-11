@@ -9,7 +9,7 @@ set(CPP_SRC_DIR "src/cpp")
 set(OPENCL_SRC_DIR "src/opencl")
 
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
-list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
+#list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin")
 
 if(WIN32)
   set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
@@ -34,6 +34,13 @@ message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
 
 ##------------------------------------------------------------------------------
+## libLAS
+##
+add_subdirectory(libLAS)
+list(APPEND INCLUDE_DIRS ${LIBLAS_BUILD_OUTPUT_DIRECTORY})
+list(APPEND LIBRARIES ${LIBLAS_BUILD_OUTPUT_DIRECTORY})
+
+##------------------------------------------------------------------------------
 ## Sources
 ##
 
@@ -51,15 +58,6 @@ if(MSVC)
 endif()
 
 ##------------------------------------------------------------------------------
-## Targets
-##
-
-add_executable(clest ${SOURCES})
-target_link_libraries(clest ${LIBRARIES})
-target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
-set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
-
-##------------------------------------------------------------------------------
 ## OpenCL
 ##
 
@@ -71,6 +69,16 @@ add_custom_command(
   DEPENDS always_execute
   )
 add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
+
+##------------------------------------------------------------------------------
+## Targets
+##
+
+add_executable(clest ${SOURCES})
+target_link_libraries(clest ${LIBRARIES})
+target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
+set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
+add_dependencies(clest always)
 
 ##------------------------------------------------------------------------------
 ## MSVC Specifics

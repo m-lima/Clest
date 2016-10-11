@@ -1,8 +1,8 @@
 //Single cell
-//__kernel void fractalSingle(__global unsigned char* output ) {
-  //unsigned int index = get_global_id(0);
-  //output[index] = index & (index << 4);
-//}
+__kernel void fractalSingle(__global unsigned char* output ) {
+  unsigned int index = get_global_id(0);
+  output[index] = index & (index << 4);
+}
 
 //Block cell
 __kernel void fractalBlock(
