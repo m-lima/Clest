@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include <LASlib/lasreader.hpp>
+#include <laslib/LASheader.hpp>
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
@@ -12,17 +12,35 @@
 
 using namespace clest;
 
+void populateDevices(std::vector<cl::Platform> * platforms, std::vector<cl::Device> * devices, cl_device_type deviceType) {
+  for (auto platform = platforms->begin(); devices->empty() && platform != platforms->end(); platform++) {
+    std::vector<cl::Device> platformDevices;
+
+    try {
+      platform->getDevices(deviceType, &platformDevices);
+
+      for (auto device = platformDevices.begin(); devices->empty() && device != platformDevices.end(); device++) {
+        std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
+
+        if (ext.find("cl_khr_fp64") == std::string::npos) {
+          if (ext.find("cl_amd_fp64") == std::string::npos) {
+            continue;
+          }
+        }
+
+        devices->push_back(*device);
+      }
+
+    } catch (...) {
+      devices->clear();
+    }
+  }
+}
+
 int main() {
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
-    return 1;
-  }
-
-  LASreadOpener readOpener;
-  readOpener.set_file_name("Yo");
-  if (!readOpener.active()) {
-    std::cerr << "File not found." << std::endl;
     return 1;
   }
 
@@ -38,36 +56,25 @@ int main() {
       return 1;
     }
 
-    cl::Context context;
     std::vector<cl::Device> devices;
-    for (auto platform = platforms.begin(); devices.empty() && platform != platforms.end(); platform++) {
-      std::vector<cl::Device> platformDevices;
+    std::cout << "Detecting double precision devices.." << std::endl;
 
-      try {
-        platform->getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
-
-        for (auto device = platformDevices.begin(); devices.empty() && device != platformDevices.end(); device++) {
-          std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
-
-          if (ext.find("cl_khr_fp64") == std::string::npos) {
-            if (ext.find("cl_amd_fp64") == std::string::npos) {
-              continue;
-            }
-          }
-
-          devices.push_back(*device);
-          context = cl::Context(devices);
-        }
-
-      } catch (...) {
-        devices.clear();
-      }
-    }
+    std::cout << "Trying GPUs.." << std::endl;
+    populateDevices(&platforms, &devices, CL_DEVICE_TYPE_GPU);
 
     if (devices.empty()) {
       std::cerr << "GPUs with double precision not found." << std::endl;
-      return 1;
+
+      std::cout << "Trying other types.." << std::endl;
+      populateDevices(&platforms, &devices, CL_DEVICE_TYPE_ALL);
+
+      if (devices.empty()) {
+        std::cerr << "No devices with double precision found." << std::endl;
+        return 1;
+      }
     }
+
+    cl::Context context(devices);
 
     cl::Device device = devices[0];
     std::cout << "Going for: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;

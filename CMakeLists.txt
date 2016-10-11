@@ -36,6 +36,10 @@ add_subdirectory(fmt)
 list(APPEND INCLUDE_DIRS fmt)
 list(APPEND LIBRARIES fmt)
 
+add_subdirectory(laslib)
+list(APPEND INCLUDE_DIRS laslib)
+list(APPEND LIBRARIES laslib)
+
 ##------------------------------------------------------------------------------
 ## LAS
 ##
