@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include <portaudio.h>
+/* #include <portaudio.h> */
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <cl.hpp>
@@ -37,7 +37,7 @@ int main() {
       std::vector<cl::Device> platformDevices;
 
       try {
-        platform->getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
+        platform->getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
 
         for (auto device = platformDevices.begin(); devices.empty() && device != platformDevices.end(); device++) {
           std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
@@ -99,9 +99,9 @@ int main() {
       /* std::cout << "Getting results.." << std::endl; */
       cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
 
-      for (size_t i = 0; i < localArray.size(); i++) {
-        std::cout << static_cast<short>(localArray[i]) << ' ';
-      }
+      /* for (size_t i = 0; i < localArray.size(); i++) { */
+      /*   std::cout << static_cast<short>(localArray[i]) << ' '; */
+      /* } */
     }
 
     std::cout << std::endl;
