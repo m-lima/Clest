@@ -12,31 +12,6 @@
 
 using namespace clest;
 
-void populateDevices(std::vector<cl::Platform> * platforms, std::vector<cl::Device> * devices, cl_device_type deviceType) {
-  for (auto platform = platforms->begin(); devices->empty() && platform != platforms->end(); platform++) {
-    std::vector<cl::Device> platformDevices;
-
-    try {
-      platform->getDevices(deviceType, &platformDevices);
-
-      for (auto device = platformDevices.begin(); devices->empty() && device != platformDevices.end(); device++) {
-        std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
-
-        if (ext.find("cl_khr_fp64") == std::string::npos) {
-          if (ext.find("cl_amd_fp64") == std::string::npos) {
-            continue;
-          }
-        }
-
-        devices->push_back(*device);
-      }
-
-    } catch (...) {
-      devices->clear();
-    }
-  }
-}
-
 int main() {
 
   // Verbose all platforms and devices
@@ -85,7 +60,10 @@ int main() {
     constexpr unsigned int workItemCount = 0x10000;
     constexpr unsigned int workItemIterations = 0x100;
     constexpr unsigned int dataSize = workItemCount * workItemIterations;
-    std::cout << "Global range: " << std::setprecision(2) << std::fixed << (globalRepeats * dataSize) / 1000000000.0 << " billion points" << std::endl;
+    std::cout << "Global range: "
+      << std::setprecision(2) << std::fixed
+      << (globalRepeats * dataSize) / 1000000000.0
+      << " billion points" << std::endl;
 
     // Create data (local array and remote buffer)
     std::cout << "Creating local array";
@@ -103,7 +81,9 @@ int main() {
       // Enqueue
       /* std::cout << "Enqueueing.." << std::endl; */
       /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */
-      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer, workItemIterations);
+      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)),
+          remoteBuffer,
+          workItemIterations);
 
       // Finishing
       /* std::cout << "Finishing.." << std::endl; */

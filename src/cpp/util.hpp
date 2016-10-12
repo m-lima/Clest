@@ -20,7 +20,9 @@ namespace clest {
 
         cl::Context context;
         std::vector<cl::Device> devices;
-        for (auto platform = platforms.begin(); platform != platforms.end(); platform++) {
+        for (auto platform = platforms.begin();
+            platform != platforms.end();
+            platform++) {
           name = platform->getInfo<CL_PLATFORM_NAME>();
           boost::trim(name);
           std::cout << name << std::endl;
@@ -29,7 +31,9 @@ namespace clest {
           try {
             platform->getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
 
-            for (auto device = platformDevices.begin(); device != platformDevices.end(); device++) {
+            for (auto device = platformDevices.begin();
+                device != platformDevices.end();
+                device++) {
               name = device->getInfo < CL_DEVICE_NAME>();
               boost::trim(name);
               std::cout << ' ';
@@ -61,7 +65,39 @@ namespace clest {
         exit(1);
       }
 
-      return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+      return std::string(std::istreambuf_iterator<char>(stream),
+          std::istreambuf_iterator<char>());
+    }
+
+    void populateDevices(std::vector<cl::Platform> * platforms,
+        std::vector<cl::Device> * devices,
+        cl_device_type deviceType) {
+      for (auto platform = platforms->begin();
+          devices->empty() && platform != platforms->end();
+          platform++) {
+        std::vector<cl::Device> platformDevices;
+
+        try {
+          platform->getDevices(deviceType, &platformDevices);
+
+          for (auto device = platformDevices.begin();
+              devices->empty() && device != platformDevices.end();
+              device++) {
+            std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
+
+            if (ext.find("cl_khr_fp64") == std::string::npos) {
+              if (ext.find("cl_amd_fp64") == std::string::npos) {
+                continue;
+              }
+            }
+
+            devices->push_back(*device);
+          }
+
+        } catch (...) {
+          devices->clear();
+        }
+      }
     }
   }
 }
