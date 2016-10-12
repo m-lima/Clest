@@ -4,6 +4,9 @@ build/
 # Vim
 *.swp
 
+# Netbeans
+nbproject/
+
 # Compiled Object files
 *.slo
 *.lo

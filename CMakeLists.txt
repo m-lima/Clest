@@ -36,9 +36,9 @@ add_subdirectory(fmt)
 list(APPEND INCLUDE_DIRS fmt)
 list(APPEND LIBRARIES fmt)
 
-add_subdirectory(laslib)
-list(APPEND INCLUDE_DIRS laslib)
-list(APPEND LIBRARIES laslib)
+# add_subdirectory(laslib)
+# list(APPEND INCLUDE_DIRS laslib)
+# list(APPEND LIBRARIES laslib)
 
 ##------------------------------------------------------------------------------
 ## LAS
@@ -53,6 +53,8 @@ list(APPEND LIBRARIES laslib)
 set(SOURCES
   ${CPP_SRC_DIR}/main.cpp
   ${CPP_SRC_DIR}/util.hpp
+  ${CPP_SRC_DIR}/las/LASheader.hpp
+  ${CPP_SRC_DIR}/las/LASfile.hpp
   )
 
 set(OPENCL_SRC
@@ -82,6 +84,7 @@ add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 ##
 
 add_executable(clest ${SOURCES})
+set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
