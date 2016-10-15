@@ -2,6 +2,7 @@
 #define LASHEADER_H
 
 #include <string>
+#include <array>
 #include <iostream>
 #include <fstream>
 
@@ -9,44 +10,20 @@ using string = std::string;
 
 namespace las {
   struct LASheader {
-    template<uint8_t MAX>
-    struct LimitedValues {
-      uint64_t & operator [](int i) {
-        if (i < MAX) {
-          return value[i];
-        }
-        throw std::out_of_range("Number of points by return access at: " + std::to_string(i) + " where max is: " + std::to_string(MAX));
-      }
-      
-      friend std::ifstream & operator>>(std::ifstream & in, LimitedValues & limitedValue) {
-        for (int i = 0; i < MAX; i++) {
-          in >> limitedValue.value[i];
-        }
-        return in;
-      }
-
-    private:
-      uint64_t value[MAX];
-    };
-
-    using LegacyNumberOfPointRecordsByReturn = LimitedValues<5>;
-    using NumberOfPointsByReturn = LimitedValues<15>;
 
     static constexpr uint16_t MAX_BYTE_SIZE = 375;
-    static constexpr uint8_t LEGACY_NUMBER_OF_POINT_RECORDS_BY_RETURN_SIZE = 5;
-    static constexpr uint8_t NUMBER_OF_POINTS_BY_RETURN_SIZE = 15;
 
-    string fileSignature = "LASF";
+    std::array<char, 4> fileSignature = { 'L', 'A', 'S', 'F' };
     uint16_t fileSourceID;
     uint16_t globalEncoding;
     uint32_t projectID1;
     uint16_t projectID2;
     uint16_t projectID3;
-    string projectID4 = "";
+    std::array<char, 8> projectID4;
     uint8_t versionMajor = 1;
     uint8_t versionMinor = 2;
-    string systemIdentifier = "MFLima";
-    string generatingSoftware = "MFLima PointCLoud";
+    std::array<char, 32> systemIdentifier;
+    std::array<char, 32> generatingSoftware;
     uint16_t fileCreationDayOfYear;
     uint16_t fileCreationYear;
     uint16_t headerSize = 227;
@@ -55,7 +32,7 @@ namespace las {
     uint8_t pointDataRecordFormat;
     uint16_t pointDataRecordLength = 20;
     uint32_t legacyNumberOfPointRecords;
-    LegacyNumberOfPointRecordsByReturn legacyNumberOfPointRecordsByReturn;
+    std::array<uint32_t, 5> legacyNumberOfPointRecordsByReturn;
     double xScaleFactor = 1;
     double yScaleFactor = 1;
     double zScaleFactor = 1;
@@ -72,22 +49,28 @@ namespace las {
     uint64_t startOfFirstExtendedVariableLengthRecord;
     uint32_t numberOfExtendedVariableLengthRecords;
     uint64_t numberOfPointRecords;
-    NumberOfPointsByReturn numberOfPointsByReturn;
+    std::array<uint64_t, 15> numberOfPointsByReturn;
+    
+    template<class T, size_t N>
+    static void insertIntoArray(std::ifstream & in, std::array<T, N> & valueArray) {
+      for (auto & value : valueArray) {
+        in >> value;
+      }
+    }
 
     friend std::ifstream & operator>>(std::ifstream & in, LASheader & header) {
-      std::cout << header.fileSignature << std::endl;
-      std::cout << header.versionMajor << '.' << header.versionMinor << std::endl;
-      in >> header.fileSignature;
+      insertIntoArray(in, header.fileSignature);
       in >> header.fileSourceID;
       in >> header.globalEncoding;
       in >> header.projectID1;
       in >> header.projectID2;
       in >> header.projectID3;
-      in >> header.projectID4;
+      in >> header.projectID4.data();
+      insertIntoArray(in, header.projectID4);
       in >> header.versionMajor;
       in >> header.versionMinor;
-      in >> header.systemIdentifier;
-      in >> header.generatingSoftware;
+      insertIntoArray(in, header.systemIdentifier);
+      insertIntoArray(in, header.generatingSoftware);
       in >> header.fileCreationDayOfYear;
       in >> header.fileCreationYear;
       in >> header.headerSize;
@@ -96,7 +79,7 @@ namespace las {
       in >> header.pointDataRecordFormat;
       in >> header.pointDataRecordLength;
       in >> header.legacyNumberOfPointRecords;
-      in >> header.legacyNumberOfPointRecordsByReturn;
+      insertIntoArray(in, header.legacyNumberOfPointRecordsByReturn);
       in >> header.xScaleFactor;
       in >> header.yScaleFactor;
       in >> header.zScaleFactor;
@@ -113,9 +96,7 @@ namespace las {
       in >> header.startOfFirstExtendedVariableLengthRecord;
       in >> header.numberOfExtendedVariableLengthRecords;
       in >> header.numberOfPointRecords;
-      in >> header.numberOfPointsByReturn;
-      std::cout << header.fileSignature << std::endl;
-      std::cout << header.versionMajor << '.' << header.versionMinor << std::endl;
+      insertIntoArray(in, header.numberOfPointsByReturn);
       return in;
     }
 
