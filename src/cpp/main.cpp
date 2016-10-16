@@ -13,18 +13,24 @@
 
 using namespace clest;
 
-int main() {
+int main(int argc, char ** argv) {
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
     return 1;
   }
 
-  std::cout << std::endl;
-  las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
+  if (argc != 2) {
+    std::cerr << "Wrong parameters" << std::endl;
+    return 1;
+  }
+
+  las::LASFile lasFile = las::read(argv[1]);
   //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Full Boat/liebas_dense_high_snitt.las");
+  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
+  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las.las");
   //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt2.las");
-  //las::PublicHeader header = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/new_liebas_dense_ultra_high_snitt.las");
+  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/SinglePoint.las");
 
   // Choose device (and platform) that supports 64-bit
   //try {

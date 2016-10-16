@@ -22,7 +22,7 @@ namespace {
         if (i++ < max) {
           list.push_back(datum);
         } else {
-          std::cout << "Add: " << i << std::endl;
+          std::cout << "Add: " << --i << std::endl;
           return;
         }
       }
