@@ -1,41 +1,39 @@
-#ifndef LASHEADER_H
-#define LASHEADER_H
+#pragma once
+#ifndef LAS_PUBLIC_HEADER_HPP
+#define LAS_PUBLIC_HEADER_HPP
 
-#include <string>
 #include <array>
-#include <iostream>
 #include <fstream>
 
 using string = std::string;
 
+#pragma pack(push, 1)
 namespace las {
-  struct LASheader {
+  struct PublicHeader {
 
-    static constexpr uint16_t MAX_BYTE_SIZE = 375;
-
-    std::array<char, 4> fileSignature = { 'L', 'A', 'S', 'F' };
+    std::array<char, 4> fileSignature;
     uint16_t fileSourceID;
     uint16_t globalEncoding;
     uint32_t projectID1;
     uint16_t projectID2;
     uint16_t projectID3;
     std::array<char, 8> projectID4;
-    uint8_t versionMajor = 1;
-    uint8_t versionMinor = 2;
+    uint8_t versionMajor;
+    uint8_t versionMinor;
     std::array<char, 32> systemIdentifier;
     std::array<char, 32> generatingSoftware;
     uint16_t fileCreationDayOfYear;
     uint16_t fileCreationYear;
-    uint16_t headerSize = 227;
-    uint32_t offsetToPointData = 227;
+    uint16_t headerSize;
+    uint32_t offsetToPointData;
     uint32_t numberOfVariableLengthRecords;
     uint8_t pointDataRecordFormat;
-    uint16_t pointDataRecordLength = 20;
+    uint16_t pointDataRecordLength;
     uint32_t legacyNumberOfPointRecords;
     std::array<uint32_t, 5> legacyNumberOfPointRecordsByReturn;
-    double xScaleFactor = 1;
-    double yScaleFactor = 1;
-    double zScaleFactor = 1;
+    double xScaleFactor;
+    double yScaleFactor;
+    double zScaleFactor;
     double xOffset;
     double yOffset;
     double zOffset;
@@ -58,14 +56,13 @@ namespace las {
       }
     }
 
-    friend std::ifstream & operator>>(std::ifstream & in, LASheader & header) {
+    friend std::ifstream & operator>>(std::ifstream & in, PublicHeader & header) {
       insertIntoArray(in, header.fileSignature);
       in >> header.fileSourceID;
       in >> header.globalEncoding;
       in >> header.projectID1;
       in >> header.projectID2;
       in >> header.projectID3;
-      in >> header.projectID4.data();
       insertIntoArray(in, header.projectID4);
       in >> header.versionMajor;
       in >> header.versionMinor;
@@ -102,6 +99,7 @@ namespace las {
 
   };
 }
+#pragma pack(pop)
 
-#endif	// LASHEADER_H
+#endif	// LAS_PUBLIC_HEADER_HPP
 

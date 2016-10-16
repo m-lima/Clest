@@ -53,8 +53,11 @@ list(APPEND LIBRARIES fmt)
 set(SOURCES
   ${CPP_SRC_DIR}/main.cpp
   ${CPP_SRC_DIR}/util.hpp
-  ${CPP_SRC_DIR}/las/LASheader.hpp
-  ${CPP_SRC_DIR}/las/LASfile.hpp
+  ${CPP_SRC_DIR}/las/PublicHeader.hpp
+  ${CPP_SRC_DIR}/las/RecordHeader.hpp
+  ${CPP_SRC_DIR}/las/PointData.hpp
+  ${CPP_SRC_DIR}/las/FileHandler.hpp
+  ${CPP_SRC_DIR}/las/FileHandler.cpp
   )
 
 set(OPENCL_SRC

@@ -6,6 +6,16 @@
 
 namespace clest {
   namespace util {
+
+    bool isBigEndian() {
+      union {
+        uint32_t i;
+        char c[4];
+      } testValue = { 0x01020304 };
+
+      return testValue.c[0] == 1;
+    }
+
     bool listALL() {
       std::cout << "Listing all platforms and devices.." << std::endl;
       try {

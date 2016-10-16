@@ -8,8 +8,8 @@
 #include <CL/cl.hpp>
 
 #include "util.hpp"
-#include "las/LASheader.hpp"
-#include "las/LASfile.hpp"
+#include "las/PublicHeader.hpp"
+#include "las/FileHandler.hpp"
 
 using namespace clest;
 
@@ -21,8 +21,10 @@ int main() {
   }
 
   std::cout << std::endl;
-
-  las::LASheader header = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/new_liebas_dense_ultra_high_snitt.las");
+  las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
+  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Full Boat/liebas_dense_high_snitt.las");
+  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt2.las");
+  //las::PublicHeader header = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/new_liebas_dense_ultra_high_snitt.las");
 
   // Choose device (and platform) that supports 64-bit
   //try {
