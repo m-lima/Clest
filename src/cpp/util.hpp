@@ -3,6 +3,8 @@
 
 #include <string>
 #include <fstream>
+#include <boost/algorithm/string.hpp>
+#include <fmt/ostream.h>
 
 namespace clest {
   namespace util {
@@ -17,51 +19,42 @@ namespace clest {
     }
 
     bool listALL() {
-      std::cout << "Listing all platforms and devices.." << std::endl;
+      fmt::print("Listing all platforms and devices..\n");
       try {
         std::vector<cl::Platform> platforms;
         cl::Platform::get(&platforms);
         std::string name;
 
         if (platforms.empty()) {
-          std::cerr << "OpenCL platforms not found." << std::endl;
+          fmt::print(stderr, "OpenCL platforms not found.\n");
           return false;
         }
 
         cl::Context context;
         std::vector<cl::Device> devices;
         for (auto platform = platforms.begin();
-            platform != platforms.end();
-            platform++) {
+          platform != platforms.end();
+          platform++) {
           name = platform->getInfo<CL_PLATFORM_NAME>();
           boost::trim(name);
-          std::cout << name << std::endl;
+          fmt::print("{}\n", name);
           std::vector<cl::Device> platformDevices;
 
           try {
             platform->getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
 
             for (auto device = platformDevices.begin();
-                device != platformDevices.end();
-                device++) {
+              device != platformDevices.end();
+              device++) {
               name = device->getInfo < CL_DEVICE_NAME>();
               boost::trim(name);
-              std::cout << ' ';
-              if ((device + 1) != platformDevices.end()) {
-                std::cout << "├";
-              } else {
-                std::cout << "└";
-              }
-              std::cout << ' ' << name << std::endl;
+              fmt::print(" {} {}\n", ((device + 1) != platformDevices.end() ? "├" : "└"), name);
             }
           } catch (...) {
           }
         }
       } catch (const cl::Error &err) {
-        std::cerr
-          << "OpenCL error: "
-          << err.what() << '(' << err.err() << ')'
-          << std::endl;
+        fmt::print(stderr, "OpenCL error: {} ({})\n", err.what(), err.err());
         return false;
       }
 
@@ -71,28 +64,28 @@ namespace clest {
     std::string loadProgram(std::string input) {
       std::ifstream stream(input.c_str());
       if (!stream.is_open()) {
-        std::cerr << "Cannot open file: " << input << std::endl;
+        fmt::print("Cannot open file: {}\n", input);
         exit(1);
       }
 
       return std::string(std::istreambuf_iterator<char>(stream),
-          std::istreambuf_iterator<char>());
+        std::istreambuf_iterator<char>());
     }
 
     void populateDevices(std::vector<cl::Platform> * platforms,
-        std::vector<cl::Device> * devices,
-        cl_device_type deviceType) {
+      std::vector<cl::Device> * devices,
+      cl_device_type deviceType) {
       for (auto platform = platforms->begin();
-          devices->empty() && platform != platforms->end();
-          platform++) {
+        devices->empty() && platform != platforms->end();
+        platform++) {
         std::vector<cl::Device> platformDevices;
 
         try {
           platform->getDevices(deviceType, &platformDevices);
 
           for (auto device = platformDevices.begin();
-              devices->empty() && device != platformDevices.end();
-              device++) {
+            devices->empty() && device != platformDevices.end();
+            device++) {
             std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
 
             if (ext.find("cl_khr_fp64") == std::string::npos) {

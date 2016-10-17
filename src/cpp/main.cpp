@@ -1,15 +1,9 @@
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <string>
-#include <boost/algorithm/string.hpp>
-
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
+#include <fmt/ostream.h>
 #include "util.hpp"
-#include "las/PublicHeader.hpp"
-#include "las/FileHandler.hpp"
+#include "las/LASFile.hpp"
 
 using namespace clest;
 
@@ -21,11 +15,15 @@ int main(int argc, char ** argv) {
   }
 
   if (argc != 2) {
-    std::cerr << "Wrong parameters" << std::endl;
+    fmt::print(stderr, "Wrong parameters\n");
     return 1;
   }
 
-  las::LASFile lasFile = las::read(argv[1]);
+  las::LASFile lasFile("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
+  lasFile.loadHeaders();
+  lasFile.loadData();
+
+  //las::LASFile lasFile = las::read(argv[1]);
   //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Full Boat/liebas_dense_high_snitt.las");
   //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
   //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las.las");

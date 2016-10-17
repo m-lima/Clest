@@ -1,5 +1,5 @@
-#ifndef LAS_FILE_HANDLER_HPP
-#define LAS_FILE_HANDLER_HPP
+#ifndef LAS_LAS_FILE_HPP
+#define LAS_LAS_FILE_HPP
 
 #include <vector>
 #include <list>
@@ -9,11 +9,17 @@
 
 namespace las {
   struct LASFile {
+    LASFile(const std::string & file);
+
     PublicHeader publicHeader;
     std::vector<RecordHeader> recordHeaders;
     std::list<PointDataZero> pointData;
-  };
 
-  LASFile read(const std::string &file);
+    void loadHeaders();
+    void loadData();
+
+  private:
+    const std::string _filePath;
+  };
 }
-#endif	// LAS_FILE_HANDLER_HPP
+#endif	// LAS_LAS_FILE_HPP

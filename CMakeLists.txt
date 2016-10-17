@@ -56,8 +56,8 @@ set(SOURCES
   ${CPP_SRC_DIR}/las/PublicHeader.hpp
   ${CPP_SRC_DIR}/las/RecordHeader.hpp
   ${CPP_SRC_DIR}/las/PointData.hpp
-  ${CPP_SRC_DIR}/las/FileHandler.hpp
-  ${CPP_SRC_DIR}/las/FileHandler.cpp
+  ${CPP_SRC_DIR}/las/LASFile.hpp
+  ${CPP_SRC_DIR}/las/LASFile.cpp
   )
 
 set(OPENCL_SRC
