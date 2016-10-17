@@ -10,7 +10,6 @@ using string = std::string;
 #pragma pack(push, 1)
 namespace las {
   struct RecordHeader {
-
     static constexpr size_t RAW_SIZE = 54;
 
     uint16_t reserved;
@@ -19,23 +18,6 @@ namespace las {
     uint16_t recordLengthAfterHeader;
     std::array<char, 32> description;
     std::vector<char> data;
-    
-    template<class T, size_t N>
-    static void insertIntoArray(std::ifstream & in, std::array<T, N> & valueArray) {
-      for (auto & value : valueArray) {
-        in >> value;
-      }
-    }
-
-    friend std::ifstream & operator>>(std::ifstream & in, RecordHeader & header) {
-      in >> header.reserved;
-      insertIntoArray(in, header.userID);
-      in >> header.recordID;
-      in >> header.recordLengthAfterHeader;
-      insertIntoArray(in, header.description);
-      return in;
-    }
-
   };
 }
 #pragma pack(pop)

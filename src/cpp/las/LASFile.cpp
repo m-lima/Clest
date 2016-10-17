@@ -1,42 +1,10 @@
 #include <string>
 #include <fstream>
 #include <fmt/ostream.h>
-#include <fmt/format.h>
 #include "LASFile.hpp"
 
 namespace {
-
   constexpr uint32_t BUFFER_SIZE = 8192;
-
-  const std::string _simplifySize(uint64_t size) {
-    if (size < 1000) {
-      return fmt::format("{:d}B", size);
-    }
-
-    double output = static_cast<double>(size);
-
-    output /= 1000.0;
-    if (output < 1000) {
-      return fmt::format("{:03.2f}kB", output);
-    }
-
-    output /= 1000.0;
-    if (output < 1000) {
-      return fmt::format("{:03.2f}MB", output);
-    }
-
-    output /= 1000.0;
-    if (output < 1000) {
-      return fmt::format("{:03.2f}GB", output);
-    }
-
-    output /= 1000.0;
-    if (output < 1000) {
-      return fmt::format("{:03.2f}TB", output);
-    }
-
-    return "<invalid>";
-  }
 
   void _cleanupHeader(las::PublicHeader & header) {
     if (header.headerSize < sizeof(las::PublicHeader)) {
@@ -145,11 +113,7 @@ namespace las {
       ? publicHeader.legacyNumberOfPointRecords
       : publicHeader.numberOfPointRecords;
 
-    fmt::print("{:>5}: {}\n", "Try", pointDataCount);
-    fmt::print("{:>5}: {}\n", "Size", _simplifySize(pointDataCount * sizeof(PointDataTwo)));
-
     uint64_t size = _loadData<PointDataTwo>(fileStream, pointData, pointDataCount);
-    fmt::print("{:>5}: {}\n", "Added", size);
 
     fileStream.close();
     return size;
@@ -173,9 +137,6 @@ namespace las {
       ? publicHeader.legacyNumberOfPointRecords
       : publicHeader.numberOfPointRecords;
 
-    fmt::print("{:>5}: {}\n", "Try", pointDataCount);
-    fmt::print("{:>5}: {}\n", "Size", _simplifySize(pointDataCount * sizeof(PointDataTwo)));
-
     uint64_t size = _loadData<PointDataTwo>(
       fileStream,
       pointData,
@@ -187,7 +148,6 @@ namespace las {
       minZ,
       maxZ
       );
-    fmt::print("{:>5}: {}\n", "Added", size);
 
     fileStream.close();
     return size;

@@ -11,7 +11,8 @@ namespace las {
 
   bool isLasValid(const PublicHeader & header);
 
-  struct LASFile {
+  class LASFile {
+  public:
     LASFile(const std::string & file);
 
     PublicHeader publicHeader;

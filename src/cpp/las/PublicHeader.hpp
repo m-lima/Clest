@@ -10,7 +10,6 @@ using string = std::string;
 #pragma pack(push, 1)
 namespace las {
   struct PublicHeader {
-
     std::array<char, 4> fileSignature;
     uint16_t fileSourceID;
     uint16_t globalEncoding;
@@ -48,55 +47,6 @@ namespace las {
     uint32_t numberOfExtendedVariableLengthRecords;
     uint64_t numberOfPointRecords;
     std::array<uint64_t, 15> numberOfPointsByReturn;
-    
-    template<class T, size_t N>
-    static void insertIntoArray(std::ifstream & in, std::array<T, N> & valueArray) {
-      for (auto & value : valueArray) {
-        in >> value;
-      }
-    }
-
-    friend std::ifstream & operator>>(std::ifstream & in, PublicHeader & header) {
-      insertIntoArray(in, header.fileSignature);
-      in >> header.fileSourceID;
-      in >> header.globalEncoding;
-      in >> header.projectID1;
-      in >> header.projectID2;
-      in >> header.projectID3;
-      insertIntoArray(in, header.projectID4);
-      in >> header.versionMajor;
-      in >> header.versionMinor;
-      insertIntoArray(in, header.systemIdentifier);
-      insertIntoArray(in, header.generatingSoftware);
-      in >> header.fileCreationDayOfYear;
-      in >> header.fileCreationYear;
-      in >> header.headerSize;
-      in >> header.offsetToPointData;
-      in >> header.numberOfVariableLengthRecords;
-      in >> header.pointDataRecordFormat;
-      in >> header.pointDataRecordLength;
-      in >> header.legacyNumberOfPointRecords;
-      insertIntoArray(in, header.legacyNumberOfPointRecordsByReturn);
-      in >> header.xScaleFactor;
-      in >> header.yScaleFactor;
-      in >> header.zScaleFactor;
-      in >> header.xOffset;
-      in >> header.yOffset;
-      in >> header.zOffset;
-      in >> header.maxX;
-      in >> header.minX;
-      in >> header.maxY;
-      in >> header.minY;
-      in >> header.maxZ;
-      in >> header.minZ;
-      in >> header.startOfWaveformDataPacketRecord;
-      in >> header.startOfFirstExtendedVariableLengthRecord;
-      in >> header.numberOfExtendedVariableLengthRecords;
-      in >> header.numberOfPointRecords;
-      insertIntoArray(in, header.numberOfPointsByReturn);
-      return in;
-    }
-
   };
 }
 #pragma pack(pop)
