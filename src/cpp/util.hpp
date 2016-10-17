@@ -6,6 +6,8 @@
 #include <boost/algorithm/string.hpp>
 #include <fmt/ostream.h>
 
+#include "las/PublicHeader.hpp"
+
 namespace clest {
   namespace util {
 
@@ -33,8 +35,8 @@ namespace clest {
         cl::Context context;
         std::vector<cl::Device> devices;
         for (auto platform = platforms.begin();
-          platform != platforms.end();
-          platform++) {
+             platform != platforms.end();
+             platform++) {
           name = platform->getInfo<CL_PLATFORM_NAME>();
           boost::trim(name);
           fmt::print("{}\n", name);
@@ -44,8 +46,8 @@ namespace clest {
             platform->getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
 
             for (auto device = platformDevices.begin();
-              device != platformDevices.end();
-              device++) {
+                 device != platformDevices.end();
+                 device++) {
               name = device->getInfo < CL_DEVICE_NAME>();
               boost::trim(name);
               fmt::print(" {} {}\n", ((device + 1) != platformDevices.end() ? "├" : "└"), name);
@@ -69,23 +71,23 @@ namespace clest {
       }
 
       return std::string(std::istreambuf_iterator<char>(stream),
-        std::istreambuf_iterator<char>());
+                         std::istreambuf_iterator<char>());
     }
 
     void populateDevices(std::vector<cl::Platform> * platforms,
-      std::vector<cl::Device> * devices,
-      cl_device_type deviceType) {
+                         std::vector<cl::Device> * devices,
+                         cl_device_type deviceType) {
       for (auto platform = platforms->begin();
-        devices->empty() && platform != platforms->end();
-        platform++) {
+           devices->empty() && platform != platforms->end();
+           platform++) {
         std::vector<cl::Device> platformDevices;
 
         try {
           platform->getDevices(deviceType, &platformDevices);
 
           for (auto device = platformDevices.begin();
-            devices->empty() && device != platformDevices.end();
-            device++) {
+               devices->empty() && device != platformDevices.end();
+               device++) {
             std::string ext = device->getInfo<CL_DEVICE_EXTENSIONS>();
 
             if (ext.find("cl_khr_fp64") == std::string::npos) {
@@ -101,6 +103,18 @@ namespace clest {
           devices->clear();
         }
       }
+    }
+
+    std::tuple<uint32_t, uint32_t, uint32_t>
+      getAxisDelta(const las::PublicHeader & header) {
+      uint32_t minX = static_cast<uint32_t>((header.minX - header.xOffset) / header.xScaleFactor);
+      uint32_t maxX = static_cast<uint32_t>((header.maxX - header.xOffset) / header.xScaleFactor);
+      uint32_t maxY = static_cast<uint32_t>((header.minY - header.yOffset) / header.yScaleFactor);
+      uint32_t minY = static_cast<uint32_t>((header.maxY - header.yOffset) / header.yScaleFactor);
+      uint32_t maxZ = static_cast<uint32_t>((header.minZ - header.zOffset) / header.zScaleFactor);
+      uint32_t minZ = static_cast<uint32_t>((header.maxZ - header.zOffset) / header.zScaleFactor);
+
+      return std::make_tuple(maxX - minX, maxY - minY, maxZ - minZ);
     }
   }
 }

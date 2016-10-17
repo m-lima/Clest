@@ -7,113 +7,167 @@
 
 using namespace clest;
 
+namespace {
+  const std::string _simplifyValue(double value) {
+    if (value < 1000) {
+      return fmt::format("{:d}", value);
+    }
+
+    value /= 1000.0;
+    if (value < 1000) {
+      return fmt::format("{:03.2f} thousand", value);
+    }
+
+    value /= 1000.0;
+    if (value < 1000) {
+      return fmt::format("{:03.2f} million", value);
+    }
+
+    value /= 1000.0;
+    if (value < 1000) {
+      return fmt::format("{:03.2f} billion", value);
+    }
+
+    value /= 1000.0;
+    if (value < 1000) {
+      return fmt::format("{:03.2f} trillion", value);
+    }
+
+    return "<invalid>";
+  }
+}
+
 int main(int argc, char ** argv) {
+  if (argc != 2) {
+    fmt::print(stderr, "Expected 1 parameter and got {}. Please specify a valid LAS file to be loaded.\n", argc - 1);
+    return 1;
+  }
+
+  las::LASFile lasFile(argv[1]);
+  //las::LASFile lasFile("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
+  lasFile.loadHeaders();
+
+  if (!las::isLasValid(lasFile.publicHeader)) {
+    fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", argv[1]);
+    return 1;
+  }
+
+#if 0
+  {
+    uint32_t minX = static_cast<uint32_t>((lasFile.publicHeader.minX - lasFile.publicHeader.xOffset) / lasFile.publicHeader.xScaleFactor);
+    uint32_t maxX = static_cast<uint32_t>((lasFile.publicHeader.maxX - lasFile.publicHeader.xOffset) / lasFile.publicHeader.xScaleFactor);
+    uint32_t minY = static_cast<uint32_t>((lasFile.publicHeader.minY - lasFile.publicHeader.yOffset) / lasFile.publicHeader.yScaleFactor);
+    uint32_t maxY = static_cast<uint32_t>((lasFile.publicHeader.maxY - lasFile.publicHeader.yOffset) / lasFile.publicHeader.yScaleFactor);
+    uint32_t minZ = static_cast<uint32_t>((lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset) / lasFile.publicHeader.zScaleFactor);
+    uint32_t maxZ = static_cast<uint32_t>((lasFile.publicHeader.maxZ - lasFile.publicHeader.zOffset) / lasFile.publicHeader.zScaleFactor);
+
+    constexpr unsigned int FACTOR = 2;
+
+    uint32_t deltaX = (maxX + FACTOR - minX) / FACTOR;
+    uint32_t deltaY = (maxY + FACTOR - minY) / FACTOR;
+    uint32_t deltaZ = (maxZ + FACTOR - minZ) / FACTOR;
+
+    uint64_t count = 0;
+
+    for (int i = 0; i < FACTOR; i++) {
+      uint32_t x = minX + deltaX * i;
+      for (int j = 0; j < FACTOR; j++) {
+        uint32_t y = minY + deltaY * j;
+        for (int k = 0; k < FACTOR; k++) {
+          uint32_t z = minZ + deltaZ * k;
+          count += lasFile.loadChunk(x, x + deltaX, y, y + deltaY, z, z + deltaZ);
+          fmt::print("Total: {}\n", count);
+          fmt::print(" Step: {}/{}\n\n", k + (FACTOR * j) + (FACTOR * FACTOR * i) + 1, FACTOR * FACTOR * FACTOR);
+        }
+      }
+    }
+  }
+#else
+  lasFile.loadAllData();
+#endif
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
     return 1;
   }
 
-  if (argc != 2) {
-    fmt::print(stderr, "Wrong parameters\n");
+  // Choose device (and platform) that supports 64-bit
+  try {
+    std::vector<cl::Platform> platforms;
+    cl::Platform::get(&platforms);
+
+    if (platforms.empty()) {
+      fmt::print(stderr, "OpenCL platforms not found.\n");
+      return 1;
+    }
+
+    std::vector<cl::Device> devices;
+    fmt::print("Detecting double precision devices..\n");
+
+    fmt::print("Trying GPUs..\n");
+    util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_GPU);
+
+    if (devices.empty()) {
+      fmt::print(stderr, "GPUs with double precision not found.\n");
+
+      fmt::print("Trying other types..\n");
+      util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_ALL);
+
+      if (devices.empty()) {
+        fmt::print(stderr, "No devices with double precision found.\n");
+        return 1;
+      }
+    }
+
+    cl::Context context(devices);
+
+    cl::Device device = devices[0];
+    fmt::print("Going for: {}\n", device.getInfo<CL_DEVICE_NAME>());
+    cl::CommandQueue queue(context, device);
+
+    // Establishing global range
+    constexpr unsigned long long globalRepeats = 0x10000;
+    constexpr unsigned int workItemCount = 0x10000;
+    constexpr unsigned int workItemIterations = 0x100;
+    constexpr unsigned int dataSize = workItemCount * workItemIterations;
+    fmt::print("Global range: {} points\n", _simplifyValue(globalRepeats * dataSize));
+
+    // Create data (local array and remote buffer)
+    fmt::print("Creating local array");
+    std::vector<unsigned char> localArray(dataSize, 0);
+    fmt::print(" and remote buffer..\n");
+    cl::Buffer remoteBuffer(context, CL_MEM_WRITE_ONLY, dataSize);
+
+    // Create program
+    fmt::print("Creating program..\n");
+    cl::Program program(context, util::loadProgram("opencl/fractal.cl"), true);
+    /* cl::make_kernel<cl::Buffer> main(program, "fractalSingle"); */
+    cl::make_kernel<cl::Buffer, unsigned int> main(program, "fractalBlock");
+
+    for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
+      // Enqueue
+      /* std::cout << "Enqueueing.." << std::endl; */
+      /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */
+      main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)),
+          remoteBuffer,
+          workItemIterations);
+
+      // Finishing
+      /* std::cout << "Finishing.." << std::endl; */
+      queue.finish();
+
+      // Getting results
+      /* std::cout << "Getting results.." << std::endl; */
+      cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
+
+      /* for (size_t i = 0; i < localArray.value(); i++) { */
+      /*   std::cout << static_cast<short>(localArray[i]) << ' '; */
+      /* } */
+    }
+    fmt::print("\n");
+
+  } catch (const cl::Error &err) {
+    fmt::print(stderr, "OpenCL error: {} ({})\n", err.what(), err.err());
     return 1;
   }
-
-  las::LASFile lasFile("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
-  lasFile.loadHeaders();
-  lasFile.loadData();
-
-  //las::LASFile lasFile = las::read(argv[1]);
-  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Full Boat/liebas_dense_high_snitt.las");
-  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
-  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las.las");
-  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt2.las");
-  //las::LASFile lasFile = las::read("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/SinglePoint.las");
-
-  // Choose device (and platform) that supports 64-bit
-  //try {
-  //  std::vector<cl::Platform> platforms;
-  //  cl::Platform::get(&platforms);
-
-  //  if (platforms.empty()) {
-  //    std::cerr << "OpenCL platforms not found." << std::endl;
-  //    return 1;
-  //  }
-
-  //  std::vector<cl::Device> devices;
-  //  std::cout << "Detecting double precision devices.." << std::endl;
-
-  //  std::cout << "Trying GPUs.." << std::endl;
-  //  util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_GPU);
-
-  //  if (devices.empty()) {
-  //    std::cerr << "GPUs with double precision not found." << std::endl;
-
-  //    std::cout << "Trying other types.." << std::endl;
-  //    util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_ALL);
-
-  //    if (devices.empty()) {
-  //      std::cerr << "No devices with double precision found." << std::endl;
-  //      return 1;
-  //    }
-  //  }
-
-  //  cl::Context context(devices);
-
-  //  cl::Device device = devices[0];
-  //  std::cout << "Going for: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
-  //  cl::CommandQueue queue(context, device);
-
-  //  // Establishing global range
-  //  constexpr unsigned long long globalRepeats = 0x10000;
-  //  constexpr unsigned int workItemCount = 0x10000;
-  //  constexpr unsigned int workItemIterations = 0x100;
-  //  constexpr unsigned int dataSize = workItemCount * workItemIterations;
-  //  std::cout << "Global range: "
-  //    << std::setprecision(2) << std::fixed
-  //    << (globalRepeats * dataSize) / 1000000000.0
-  //    << " billion points" << std::endl;
-
-  //  // Create data (local array and remote buffer)
-  //  std::cout << "Creating local array";
-  //  std::vector<unsigned char> localArray(dataSize, 0);
-  //  std::cout << " and remote buffer.." << std::endl;
-  //  cl::Buffer remoteBuffer(context, CL_MEM_WRITE_ONLY, dataSize);
-
-  //  // Create program
-  //  std::cout << "Creating program.." << std::endl;
-  //  cl::Program program(context, util::loadProgram("opencl/fractal.cl"), true);
-  //  /* cl::make_kernel<cl::Buffer> main(program, "fractalSingle"); */
-  //  cl::make_kernel<cl::Buffer, unsigned int> main(program, "fractalBlock");
-
-  //  for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
-  //    // Enqueue
-  //    /* std::cout << "Enqueueing.." << std::endl; */
-  //    /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */
-  //    main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)),
-  //        remoteBuffer,
-  //        workItemIterations);
-
-  //    // Finishing
-  //    /* std::cout << "Finishing.." << std::endl; */
-  //    queue.finish();
-
-  //    // Getting results
-  //    /* std::cout << "Getting results.." << std::endl; */
-  //    cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
-
-  //    /* for (size_t i = 0; i < localArray.size(); i++) { */
-  //    /*   std::cout << static_cast<short>(localArray[i]) << ' '; */
-  //    /* } */
-  //  }
-
-  //  std::cout << std::endl;
-
-  //} catch (const cl::Error &err) {
-  //  std::cerr
-  //    << "OpenCL error: "
-  //    << err.what() << '(' << err.err() << ')'
-  //    << std::endl;
-  //  return 1;
-  //}
 }

@@ -62,6 +62,7 @@ set(SOURCES
 
 set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/fractal.cl
+  ${OPENCL_SRC_DIR}/lop.cl
   )
 
 if(MSVC)
