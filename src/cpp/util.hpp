@@ -104,18 +104,6 @@ namespace clest {
         }
       }
     }
-
-    std::tuple<uint32_t, uint32_t, uint32_t>
-      getAxisDelta(const las::PublicHeader & header) {
-      uint32_t minX = static_cast<uint32_t>((header.minX - header.xOffset) / header.xScaleFactor);
-      uint32_t maxX = static_cast<uint32_t>((header.maxX - header.xOffset) / header.xScaleFactor);
-      uint32_t maxY = static_cast<uint32_t>((header.minY - header.yOffset) / header.yScaleFactor);
-      uint32_t minY = static_cast<uint32_t>((header.maxY - header.yOffset) / header.yScaleFactor);
-      uint32_t maxZ = static_cast<uint32_t>((header.minZ - header.zOffset) / header.zScaleFactor);
-      uint32_t minZ = static_cast<uint32_t>((header.maxZ - header.zOffset) / header.zScaleFactor);
-
-      return std::make_tuple(maxX - minX, maxY - minY, maxZ - minZ);
-    }
   }
 }
 
