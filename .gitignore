@@ -7,6 +7,9 @@ build/
 # Netbeans
 nbproject/
 
+# Data files
+*.las
+
 # Compiled Object files
 *.slo
 *.lo
