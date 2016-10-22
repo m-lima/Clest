@@ -11,27 +11,30 @@ namespace las {
 
   bool isLasValid(const PublicHeader & header);
 
+  template <typename T>
   class LASFile {
   public:
     LASFile(const std::string & file);
 
     PublicHeader publicHeader;
     std::vector<RecordHeader> recordHeaders;
-    std::deque<PointDataMin> pointData;
+    std::deque<T> pointData;
+
+    const std::string filePath;
 
     void loadHeaders();
-    uint64_t loadAllData();
-    uint64_t loadChunk(
-      uint32_t minX,
-      uint32_t maxX,
-      uint32_t minY,
-      uint32_t maxY,
-      uint32_t minZ,
-      uint32_t maxZ
+    uint64_t loadData(
+      uint32_t minX = -1,
+      uint32_t maxX = 0,
+      uint32_t minY = -1,
+      uint32_t maxY = 0,
+      uint32_t minZ = -1,
+      uint32_t maxZ = 0
     );
+    const uint64_t pointDataCount() const;
 
   private:
-    const std::string _filePath;
+    uint64_t _pointDataCount;
   };
 }
 #endif	// LAS_LAS_FILE_HPP

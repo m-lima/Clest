@@ -4,7 +4,17 @@
 #include "LASFile.hpp"
 
 namespace {
-  constexpr uint32_t BUFFER_SIZE = 8192;
+  constexpr uint32_t BUFFER_SIZE = 65536;
+
+  size_t _sizeOfFormat(uint8_t format) {
+    if (format == 0) return sizeof(las::PointDataZero);
+    if (format == 1) return sizeof(las::PointDataOne);
+    if (format == 2) return sizeof(las::PointDataTwo);
+    if (format == 3) return sizeof(las::PointDataThree);
+    if (format == 4) return sizeof(las::PointDataFour);
+    if (format == 5) return sizeof(las::PointDataFive);
+    throw std::invalid_argument(fmt::format("Format {} is not recognized"));
+  }
 
   void _cleanupHeader(las::PublicHeader & header) {
     if (header.headerSize < sizeof(las::PublicHeader)) {
@@ -15,74 +25,95 @@ namespace {
     }
   }
 
-  template <typename IncomingType, typename T>
+  template <typename T>
   uint64_t _loadData(
+    size_t typeSize,
     std::ifstream & in,
     std::deque<T> & container,
     uint64_t max,
-    uint32_t minX,
-    uint32_t maxX,
-    uint32_t minY,
-    uint32_t maxY,
-    uint32_t minZ,
-    uint32_t maxZ
+    uint32_t minX = -1,
+    uint32_t maxX = 0,
+    uint32_t minY = -1,
+    uint32_t maxY = 0,
+    uint32_t minZ = -1,
+    uint32_t maxZ = 0
   ) {
     container.clear();
     uint64_t count = 0;
     uint64_t iCount = 0;
-    while (in.good()) {
-      IncomingType data[BUFFER_SIZE];
-      in.read(reinterpret_cast<char*>(&data), sizeof(IncomingType) * BUFFER_SIZE);
-      for (auto & datum : data) {
-        if (count < max) {
-          count++;
-          if (datum.base.x < minX || datum.base.y < minY || datum.base.z < minZ
-              || datum.base.x >= maxX || datum.base.y >= maxY || datum.base.z >= maxZ) {
-            continue;
+    las::PointDataBase *base;
+
+    char data[BUFFER_SIZE];
+    if (
+      minX == -1 &&
+      maxX == 0 &&
+      minY == -1 &&
+      maxY == 0 &&
+      minZ == -1 &&
+      maxZ == 0) {
+      while (count < max && in.good()) {
+        in.read(data, BUFFER_SIZE);
+        for (size_t i = typeSize; i < BUFFER_SIZE; i += typeSize) {
+          base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
+          if (count < max) {
+            count++;
+            container.push_back(T(*base));
+            iCount++;
+          } else {
+            break;
           }
-
-          container.push_front(T(datum.base));
-          iCount++;
-        } else {
-          return iCount;
+        }
+      }
+    } else {
+      while (count < max && in.good()) {
+        in.read(data, BUFFER_SIZE);
+        for (size_t i = typeSize; i < BUFFER_SIZE; i += typeSize) {
+          base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
+          if (count < max) {
+            count++;
+            if (base->x < minX || base->y < minY || base->z < minZ
+                || base->x >= maxX || base->y >= maxY || base->z >= maxZ) {
+              continue;
+            }
+            container.push_back(T(*base));
+            iCount++;
+          } else {
+            break;
+          }
         }
       }
     }
+    container.shrink_to_fit();
     return iCount;
-  }
-
-  template <typename IncomingType, typename T>
-  uint64_t _loadData(
-    std::ifstream & in,
-    std::deque<T> & container,
-    uint64_t max
-  ) {
-    container.clear();
-    uint64_t i = 0;
-    while (in.good()) {
-      IncomingType data[BUFFER_SIZE];
-      in.read(reinterpret_cast<char*>(&data), sizeof(IncomingType) * BUFFER_SIZE);
-      for (auto & datum : data) {
-        if (i < max) {
-          container.push_front(T(datum.base));
-          i++;
-        } else {
-          return i;
-        }
-      }
-    }
-    return i;
   }
 }
 
 namespace las {
-  LASFile::LASFile(const std::string & file)
-    : _filePath(std::move(file)) {}
+  
+  bool isLasValid(const PublicHeader & header) {
+    char reference[] = "LASF";
+    for (int i = 0; i < header.fileSignature.size(); i++) {
+      if (header.fileSignature[i] != reference[i]) {
+        return false;
+      }
+    }
 
-  void LASFile::loadHeaders() {
-    std::ifstream fileStream(_filePath, std::ifstream::in | std::ifstream::binary);
+    if (header.headerSize < 227) {
+      return false;
+    }
+
+    return true;
+  }
+
+  template <typename T>
+  LASFile<T>::LASFile(const std::string & file)
+    : filePath(std::move(file)) {}
+
+  template <typename T>
+  void LASFile<T>::loadHeaders() {
+    std::ifstream fileStream(filePath, std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", _filePath));
+      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
     }
 
     fileStream.read(reinterpret_cast<char*>(&publicHeader), sizeof(PublicHeader));
@@ -100,26 +131,15 @@ namespace las {
         std::memcpy(buffer, header.data.data(), header.recordLengthAfterHeader);
       }
     }
-  }
-
-  uint64_t LASFile::loadAllData() {
-    std::ifstream fileStream(_filePath, std::ifstream::in | std::ifstream::binary);
-    if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", _filePath));
-    }
 
     fileStream.seekg(publicHeader.offsetToPointData);
-    uint64_t pointDataCount = publicHeader.legacyNumberOfPointRecords > 0
+    _pointDataCount = publicHeader.legacyNumberOfPointRecords > 0
       ? publicHeader.legacyNumberOfPointRecords
       : publicHeader.numberOfPointRecords;
-
-    uint64_t size = _loadData<PointDataTwo>(fileStream, pointData, pointDataCount);
-
-    fileStream.close();
-    return size;
   }
 
-  uint64_t LASFile::loadChunk(
+  template <typename T>
+  uint64_t LASFile<T>::loadData(
     uint32_t minX,
     uint32_t maxX,
     uint32_t minY,
@@ -127,20 +147,18 @@ namespace las {
     uint32_t minZ,
     uint32_t maxZ
   ) {
-    std::ifstream fileStream(_filePath, std::ifstream::in | std::ifstream::binary);
+    std::ifstream fileStream(filePath, std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", _filePath));
+      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
     }
 
     fileStream.seekg(publicHeader.offsetToPointData);
-    uint64_t pointDataCount = publicHeader.legacyNumberOfPointRecords > 0
-      ? publicHeader.legacyNumberOfPointRecords
-      : publicHeader.numberOfPointRecords;
 
-    uint64_t size = _loadData<PointDataTwo>(
+    uint64_t size = _loadData(
+      _sizeOfFormat(publicHeader.pointDataRecordFormat),
       fileStream,
       pointData,
-      pointDataCount,
+      _pointDataCount,
       minX, 
       maxX,
       minY,
@@ -153,19 +171,10 @@ namespace las {
     return size;
   }
 
-  bool isLasValid(const PublicHeader & header) {
-    char reference[] = "LASF";
-    for (int i = 0; i < header.fileSignature.size(); i++) {
-      if (header.fileSignature[i] != reference[i]) {
-        return false;
-      }
-    }
-
-    if (header.headerSize < 227) {
-      return false;
-    }
-
-    return true;
+  template <typename T>
+  const uint64_t LASFile<T>::pointDataCount() const {
+    return _pointDataCount;
   }
 
+  template class LASFile<PointDataMin>;
 }

@@ -43,12 +43,13 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  las::LASFile lasFile(argv[1]);
+  las::LASFile<las::PointDataMin> lasFile(argv[1]);
+  fmt::print("Loading LAS file:\n{}\n", argv[1]);
   //las::LASFile lasFile("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
   lasFile.loadHeaders();
 
   if (!las::isLasValid(lasFile.publicHeader)) {
-    fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", argv[1]);
+    fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", lasFile.filePath);
     return 1;
   }
 
@@ -83,7 +84,15 @@ int main(int argc, char ** argv) {
     }
   }
 #else
-  lasFile.loadAllData();
+  fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
+  lasFile.loadData();
+  fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
+
+  fmt::print("First 20 points ---\n");
+  for (int i = 0; i < 20; i++) {
+    auto point = lasFile.pointData[i];
+    fmt::print("X: {}\nY: {}\nZ: {}\n=========\n", point.x, point.y, point.z);
+  }
 #endif
 
   // Verbose all platforms and devices
@@ -122,7 +131,7 @@ int main(int argc, char ** argv) {
     cl::Context context(devices);
 
     cl::Device device = devices[0];
-    fmt::print("Going for: {}\n", device.getInfo<CL_DEVICE_NAME>());
+    fmt::print("Going for: {}\n\n", device.getInfo<CL_DEVICE_NAME>());
     cl::CommandQueue queue(context, device);
 
     // Establishing global range
