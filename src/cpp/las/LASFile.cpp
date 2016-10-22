@@ -43,6 +43,15 @@ namespace {
     uint64_t iCount = 0;
     las::PointDataBase *base;
 
+    struct maxers {
+      uint32_t minX = -1;
+      uint32_t maxX = 0;
+      uint32_t minY = -1;
+      uint32_t maxY = 0;
+      uint32_t minZ = -1;
+      uint32_t maxZ = 0;
+    } maxers;
+
     char data[BUFFER_SIZE];
     if (
       minX == -1 &&
@@ -58,6 +67,12 @@ namespace {
           if (count < max) {
             count++;
             container.push_back(T(*base));
+            if (maxers.minX > base->x) maxers.minX = base->x;
+            if (maxers.minY > base->y) maxers.minY = base->y;
+            if (maxers.minZ > base->z) maxers.minZ = base->z;
+            if (maxers.maxX < base->x) maxers.maxX = base->x;
+            if (maxers.maxY < base->y) maxers.maxY = base->y;
+            if (maxers.maxZ < base->z) maxers.maxZ = base->z;
             iCount++;
           } else {
             break;
@@ -84,6 +99,7 @@ namespace {
       }
     }
     container.shrink_to_fit();
+    fmt::print("X: [{}, {}]\nY: [{}, {}]\nZ: [{}, {}]\n", maxers.minX, maxers.maxX, maxers.minY, maxers.maxY, maxers.minZ, maxers.maxZ);
     return iCount;
   }
 }

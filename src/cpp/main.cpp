@@ -84,6 +84,15 @@ int main(int argc, char ** argv) {
     }
   }
 #else
+  uint32_t minX = static_cast<uint32_t>((lasFile.publicHeader.minX - lasFile.publicHeader.xOffset) / lasFile.publicHeader.xScaleFactor);
+  uint32_t maxX = static_cast<uint32_t>((lasFile.publicHeader.maxX - lasFile.publicHeader.xOffset) / lasFile.publicHeader.xScaleFactor);
+  uint32_t minY = static_cast<uint32_t>((lasFile.publicHeader.minY - lasFile.publicHeader.yOffset) / lasFile.publicHeader.yScaleFactor);
+  uint32_t maxY = static_cast<uint32_t>((lasFile.publicHeader.maxY - lasFile.publicHeader.yOffset) / lasFile.publicHeader.yScaleFactor);
+  uint32_t minZ = static_cast<uint32_t>((lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset) / lasFile.publicHeader.zScaleFactor);
+  uint32_t maxZ = static_cast<uint32_t>((lasFile.publicHeader.maxZ - lasFile.publicHeader.zOffset) / lasFile.publicHeader.zScaleFactor);
+
+  fmt::print("X: [{}, {}]\nY: [{}, {}]\nZ: [{}, {}]\n", minX, maxX, minY, maxY, minZ, maxZ);
+
   fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
   lasFile.loadData();
   fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
