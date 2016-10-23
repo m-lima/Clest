@@ -33,15 +33,6 @@ namespace {
     uint64_t iCount = 0;
     las::PointDataBase *base;
 
-    struct maxers {
-      uint32_t minX = -1;
-      uint32_t maxX = 0;
-      uint32_t minY = -1;
-      uint32_t maxY = 0;
-      uint32_t minZ = -1;
-      uint32_t maxZ = 0;
-    } maxers;
-
     assert(BUFFER_SIZE > typeSize);
     uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
 
@@ -55,17 +46,11 @@ namespace {
       maxZ == 0) {
       while (count < max && in.good()) {
         in.read(data, blockSize);
-        for (size_t i = typeSize; i < blockSize; i += typeSize) {
-          base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
+        for (size_t i = 0; i < blockSize; i += typeSize) {
+          base = reinterpret_cast<las::PointDataBase*>(data + i);
           if (count < max) {
             count++;
             container.push_back(T(*base));
-            if (maxers.minX > base->x) maxers.minX = base->x;
-            if (maxers.minY > base->y) maxers.minY = base->y;
-            if (maxers.minZ > base->z) maxers.minZ = base->z;
-            if (maxers.maxX < base->x) maxers.maxX = base->x;
-            if (maxers.maxY < base->y) maxers.maxY = base->y;
-            if (maxers.maxZ < base->z) maxers.maxZ = base->z;
             iCount++;
           } else {
             break;
@@ -75,8 +60,8 @@ namespace {
     } else {
       while (count < max && in.good()) {
         in.read(data, blockSize);
-        for (size_t i = typeSize; i < blockSize; i += typeSize) {
-          base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
+        for (size_t i = 0; i < blockSize; i += typeSize) {
+          base = reinterpret_cast<las::PointDataBase*>(data + i);
           if (count < max) {
             count++;
             if (base->x < minX || base->y < minY || base->z < minZ
@@ -92,7 +77,6 @@ namespace {
       }
     }
     container.shrink_to_fit();
-    fmt::print("X: [{}, {}]\nY: [{}, {}]\nZ: [{}, {}]\n", maxers.minX, maxers.maxX, maxers.minY, maxers.maxY, maxers.minZ, maxers.maxZ);
     return iCount;
   }
 }
@@ -107,7 +91,8 @@ namespace las {
       }
     }
 
-    if (header.headerSize < 227) {
+    // LAS specification up to 1.4
+    if (header.headerSize < 227 || header.headerSize > 375) {
       return false;
     }
 
