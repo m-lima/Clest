@@ -162,7 +162,8 @@ int main(int argc, char ** argv) {
     /* cl::make_kernel<cl::Buffer> main(program, "fractalSingle"); */
     cl::make_kernel<cl::Buffer, unsigned int> main(program, "fractalBlock");
 
-    for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
+    for (unsigned repeat = 0; repeat < 0; repeat++) {
+    //for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
       // Enqueue
       /* std::cout << "Enqueueing.." << std::endl; */
       /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */

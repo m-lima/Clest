@@ -4,17 +4,7 @@
 #include "LASFile.hpp"
 
 namespace {
-  constexpr uint32_t BUFFER_SIZE = 65536;
-
-  size_t _sizeOfFormat(uint8_t format) {
-    if (format == 0) return sizeof(las::PointDataZero);
-    if (format == 1) return sizeof(las::PointDataOne);
-    if (format == 2) return sizeof(las::PointDataTwo);
-    if (format == 3) return sizeof(las::PointDataThree);
-    if (format == 4) return sizeof(las::PointDataFour);
-    if (format == 5) return sizeof(las::PointDataFive);
-    throw std::invalid_argument(fmt::format("Format {} is not recognized"));
-  }
+  constexpr uint16_t BUFFER_SIZE = 8192;
 
   void _cleanupHeader(las::PublicHeader & header) {
     if (header.headerSize < sizeof(las::PublicHeader)) {
@@ -27,7 +17,7 @@ namespace {
 
   template <typename T>
   uint64_t _loadData(
-    size_t typeSize,
+    uint16_t typeSize,
     std::ifstream & in,
     std::deque<T> & container,
     uint64_t max,
@@ -52,6 +42,9 @@ namespace {
       uint32_t maxZ = 0;
     } maxers;
 
+    assert(BUFFER_SIZE > typeSize);
+    uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
+
     char data[BUFFER_SIZE];
     if (
       minX == -1 &&
@@ -61,8 +54,8 @@ namespace {
       minZ == -1 &&
       maxZ == 0) {
       while (count < max && in.good()) {
-        in.read(data, BUFFER_SIZE);
-        for (size_t i = typeSize; i < BUFFER_SIZE; i += typeSize) {
+        in.read(data, blockSize);
+        for (size_t i = typeSize; i < blockSize; i += typeSize) {
           base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
           if (count < max) {
             count++;
@@ -81,8 +74,8 @@ namespace {
       }
     } else {
       while (count < max && in.good()) {
-        in.read(data, BUFFER_SIZE);
-        for (size_t i = typeSize; i < BUFFER_SIZE; i += typeSize) {
+        in.read(data, blockSize);
+        for (size_t i = typeSize; i < blockSize; i += typeSize) {
           base = reinterpret_cast<las::PointDataBase*>(data + i - typeSize);
           if (count < max) {
             count++;
@@ -139,19 +132,19 @@ namespace las {
     if (publicHeader.numberOfVariableLengthRecords > 0) {
       recordHeaders.resize(publicHeader.numberOfVariableLengthRecords);
 
-      char buffer[0xFFFF];
       for (auto & header : recordHeaders) {
         fileStream.read(reinterpret_cast<char*>(&header), sizeof(RecordHeader::RAW_SIZE));
-        fileStream.read(buffer, header.recordLengthAfterHeader);
-        header.data.reserve(header.recordLengthAfterHeader);
-        std::memcpy(buffer, header.data.data(), header.recordLengthAfterHeader);
+        uint16_t bytesToRead = header.recordLengthAfterHeader;
+        header.data.reserve(bytesToRead);
+        fileStream.read(header.data.data(), bytesToRead);
       }
     }
 
-    fileStream.seekg(publicHeader.offsetToPointData);
     _pointDataCount = publicHeader.legacyNumberOfPointRecords > 0
       ? publicHeader.legacyNumberOfPointRecords
       : publicHeader.numberOfPointRecords;
+
+    fileStream.close();
   }
 
   template <typename T>
@@ -171,7 +164,7 @@ namespace las {
     fileStream.seekg(publicHeader.offsetToPointData);
 
     uint64_t size = _loadData(
-      _sizeOfFormat(publicHeader.pointDataRecordFormat),
+      publicHeader.pointDataRecordLength,
       fileStream,
       pointData,
       _pointDataCount,
