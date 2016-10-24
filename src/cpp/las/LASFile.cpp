@@ -31,9 +31,11 @@ namespace {
     container.clear();
     uint64_t count = 0;
     uint64_t iCount = 0;
-    las::PointDataBase *base;
+    T *base;
 
-    assert(BUFFER_SIZE > typeSize);
+    if (BUFFER_SIZE < typeSize) {
+      throw std::runtime_error(fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})", BUFFER_SIZE, typeSize));
+    }
     uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
 
     char data[BUFFER_SIZE];
@@ -46,33 +48,25 @@ namespace {
       maxZ == 0) {
       while (count < max && in.good()) {
         in.read(data, blockSize);
-        for (size_t i = 0; i < blockSize; i += typeSize) {
-          base = reinterpret_cast<las::PointDataBase*>(data + i);
-          if (count < max) {
-            count++;
-            container.push_back(T(*base));
-            iCount++;
-          } else {
-            break;
-          }
+        for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
+          base = reinterpret_cast<T*>(data + i);
+          count++;
+          container.push_back(*base);
+          iCount++;
         }
       }
     } else {
       while (count < max && in.good()) {
         in.read(data, blockSize);
-        for (size_t i = 0; i < blockSize; i += typeSize) {
-          base = reinterpret_cast<las::PointDataBase*>(data + i);
-          if (count < max) {
-            count++;
-            if (base->x < minX || base->y < minY || base->z < minZ
-                || base->x >= maxX || base->y >= maxY || base->z >= maxZ) {
-              continue;
-            }
-            container.push_back(T(*base));
-            iCount++;
-          } else {
-            break;
+        for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
+          base = reinterpret_cast<T*>(data + i);
+          count++;
+          if (base->x < minX || base->y < minY || base->z < minZ
+              || base->x >= maxX || base->y >= maxY || base->z >= maxZ) {
+            continue;
           }
+          container.push_back(*base);
+          iCount++;
         }
       }
     }
@@ -118,7 +112,7 @@ namespace las {
       recordHeaders.resize(publicHeader.numberOfVariableLengthRecords);
 
       for (auto & header : recordHeaders) {
-        fileStream.read(reinterpret_cast<char*>(&header), sizeof(RecordHeader::RAW_SIZE));
+        fileStream.read(reinterpret_cast<char*>(&header), RecordHeader::RAW_SIZE);
         uint16_t bytesToRead = header.recordLengthAfterHeader;
         header.data.reserve(bytesToRead);
         fileStream.read(header.data.data(), bytesToRead);
@@ -166,9 +160,30 @@ namespace las {
   }
 
   template <typename T>
-  const uint64_t LASFile<T>::pointDataCount() const {
+  uint64_t LASFile<T>::pointDataCount() const {
     return _pointDataCount;
   }
 
-  template class LASFile<PointDataMin>;
+  template<typename T>
+  void LASFile<T>::save(const std::string & file) const {
+    std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
+    if (!fileStream.is_open()) {
+      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
+    }
+
+    fileStream.write(reinterpret_cast<char*>(const_cast<PublicHeader*>(&publicHeader)), publicHeader.headerSize);
+    for (auto & header : recordHeaders) {
+      fileStream.write(reinterpret_cast<char*>(const_cast<RecordHeader*>(&header)), RecordHeader::RAW_SIZE);
+      fileStream.write(header.data.data(), header.recordLengthAfterHeader);
+    }
+
+    for (auto & point : pointData) {
+      fileStream.write(reinterpret_cast<char*>(const_cast<T*>(&point)), sizeof(T));
+    }
+
+    fileStream.close();
+  }
+
+  template class LASFile<PointData<-1>>;
+  template class LASFile<PointData<2>>;
 }

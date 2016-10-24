@@ -31,7 +31,11 @@ namespace las {
       uint32_t minZ = -1,
       uint32_t maxZ = 0
     );
-    const uint64_t pointDataCount() const;
+    uint64_t pointDataCount() const;
+    void save() const {
+      save(filePath);
+    }
+    void save(const std::string & file) const;
 
   private:
     uint64_t _pointDataCount;

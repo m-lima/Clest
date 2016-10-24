@@ -23,7 +23,18 @@ namespace las {
     }
   };
 
-  struct PointDataBase {
+  template <int N>
+  struct PointData;
+
+  template<>
+  struct PointData<-1> {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+  };
+
+  template <>
+  struct PointData<0> {
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -35,17 +46,65 @@ namespace las {
     uint16_t pointSourceID;
   };
 
-  struct PointDataGPS {
+  template <>
+  struct PointData<1> {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    uint16_t intensity;
+    CombinedValues combinedValues;
+    uint8_t classification;
+    int8_t scanAngleRank;
+    uint8_t userData;
+    uint16_t pointSourceID;
     double GPStime;
   };
 
-  struct PointDataRGB {
+  template <>
+  struct PointData<2> {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    uint16_t intensity;
+    CombinedValues combinedValues;
+    uint8_t classification;
+    int8_t scanAngleRank;
+    uint8_t userData;
+    uint16_t pointSourceID;
     uint16_t red;
     uint16_t green;
     uint16_t blue;
   };
 
-  struct PointDataWave {
+  template <>
+  struct PointData<3> {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    uint16_t intensity;
+    CombinedValues combinedValues;
+    uint8_t classification;
+    int8_t scanAngleRank;
+    uint8_t userData;
+    uint16_t pointSourceID;
+    double GPStime;
+    uint16_t red;
+    uint16_t green;
+    uint16_t blue;
+  };
+
+  template <>
+  struct PointData<4> {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    uint16_t intensity;
+    CombinedValues combinedValues;
+    uint8_t classification;
+    int8_t scanAngleRank;
+    uint8_t userData;
+    uint16_t pointSourceID;
+    double GPStime;
     uint8_t wavePacketDescriptorIndex;
     uint64_t byteOffsetToWaveformLocation;
     float returnPointWaveformLocation;
@@ -54,48 +113,27 @@ namespace las {
     float zT;
   };
 
-  struct PointDataZero {
-    PointDataBase base;
-  };
-
-  struct PointDataOne {
-    PointDataBase base;
-    PointDataGPS gps;
-  };
-
-  struct PointDataTwo {
-    PointDataBase base;
-    PointDataRGB rgb;
-  };
-
-  struct PointDataThree {
-    PointDataBase base;
-    PointDataGPS gps;
-    PointDataRGB rgb;
-  };
-
-  struct PointDataFour {
-    PointDataBase base;
-    PointDataGPS gps;
-    PointDataWave wave;
-  };
-
-  struct PointDataFive {
-    PointDataBase base;
-    PointDataGPS gps;
-    PointDataRGB rgb;
-    PointDataWave wave;
-  };
-
-  struct PointDataMin {
+  template <>
+  struct PointData<5> {
     uint32_t x;
     uint32_t y;
     uint32_t z;
-
-    PointDataMin(const PointDataBase & pointData) :
-      x(pointData.x),
-      y(pointData.y),
-      z(pointData.z) {}
+    uint16_t intensity;
+    CombinedValues combinedValues;
+    uint8_t classification;
+    int8_t scanAngleRank;
+    uint8_t userData;
+    uint16_t pointSourceID;
+    double GPStime;
+    uint16_t red;
+    uint16_t green;
+    uint16_t blue;
+    uint8_t wavePacketDescriptorIndex;
+    uint64_t byteOffsetToWaveformLocation;
+    float returnPointWaveformLocation;
+    float xT;
+    float yT;
+    float zT;
   };
 }
 #pragma pack(pop)

@@ -4,6 +4,7 @@
 #include <fmt/ostream.h>
 #include "util.hpp"
 #include "las/LASFile.hpp"
+#include "colorizer.hpp"
 
 using namespace clest;
 
@@ -43,7 +44,7 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  las::LASFile<las::PointDataMin> lasFile(argv[1]);
+  las::LASFile<las::PointData<-1>> lasFile(argv[1]);
   fmt::print("Loading LAS file:\n{}\n", argv[1]);
   //las::LASFile lasFile("C:/Users/mflim_000/Documents/VMShare/PointCloud/Liebas/Spool Dense/liebas_dense_ultra_high_snitt.las");
   lasFile.loadHeaders();
@@ -83,11 +84,13 @@ int main(int argc, char ** argv) {
       }
     }
   }
-#else
+//#else
   fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
   lasFile.loadData();
   fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
 #endif
+
+  colorize(lasFile);
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
