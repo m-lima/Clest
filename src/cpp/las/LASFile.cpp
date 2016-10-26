@@ -32,7 +32,7 @@ namespace {
     uint64_t count = 0;
     uint64_t iCount = 0;
     T *base;
-	container.reserve(max);
+    container.reserve(max);
 
     if (BUFFER_SIZE < typeSize) {
       throw std::runtime_error(fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})", BUFFER_SIZE, typeSize));

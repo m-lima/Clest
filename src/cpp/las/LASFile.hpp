@@ -17,7 +17,7 @@ namespace las {
 
     PublicHeader publicHeader;
     std::vector<RecordHeader> recordHeaders;
-	std::vector<T> pointData;
+    std::vector<T> pointData;
 
     const std::string filePath;
 

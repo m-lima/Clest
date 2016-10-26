@@ -23,7 +23,7 @@ namespace {
     PointData<2> newPoint;
     newPoint.green = 0;
     output.resize(0);
-	output.reserve(dataPointCount);
+    output.reserve(dataPointCount);
     T *base;
     char data[BUFFER_SIZE];
     

@@ -84,13 +84,12 @@ int main(int argc, char ** argv) {
       }
     }
   }
-//#else
+#else
   fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
   lasFile.loadData();
   fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
+  //colorize(lasFile);
 #endif
-
-  colorize(lasFile);
 
   // Verbose all platforms and devices
   if (!util::listALL()) {
