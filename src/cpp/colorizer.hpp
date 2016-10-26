@@ -10,7 +10,7 @@ using namespace las;
 namespace {
 
   template <typename T>
-  void iterateAndSetColor(const LASFile<T> & file, std::deque<PointData<2>> & output) {
+  void iterateAndSetColor(const LASFile<T> & file, std::vector<PointData<2>> & output) {
     constexpr uint16_t BUFFER_SIZE = 8192;
     constexpr uint16_t MAX_COLOR = 0xFFFF;
 
@@ -23,6 +23,7 @@ namespace {
     PointData<2> newPoint;
     newPoint.green = 0;
     output.resize(0);
+	output.reserve(dataPointCount);
     T *base;
     char data[BUFFER_SIZE];
     

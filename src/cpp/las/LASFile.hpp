@@ -2,7 +2,6 @@
 #define LAS_LAS_FILE_HPP
 
 #include <vector>
-#include <deque>
 #include "PublicHeader.hpp"
 #include "RecordHeader.hpp"
 #include "PointData.hpp"
@@ -18,7 +17,7 @@ namespace las {
 
     PublicHeader publicHeader;
     std::vector<RecordHeader> recordHeaders;
-    std::deque<T> pointData;
+	std::vector<T> pointData;
 
     const std::string filePath;
 

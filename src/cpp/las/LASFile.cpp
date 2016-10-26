@@ -19,7 +19,7 @@ namespace {
   uint64_t _loadData(
     uint16_t typeSize,
     std::ifstream & in,
-    std::deque<T> & container,
+    std::vector<T> & container,
     uint64_t max,
     uint32_t minX = -1,
     uint32_t maxX = 0,
@@ -32,6 +32,7 @@ namespace {
     uint64_t count = 0;
     uint64_t iCount = 0;
     T *base;
+	container.reserve(max);
 
     if (BUFFER_SIZE < typeSize) {
       throw std::runtime_error(fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})", BUFFER_SIZE, typeSize));
@@ -114,7 +115,7 @@ namespace las {
       for (auto & header : recordHeaders) {
         fileStream.read(reinterpret_cast<char*>(&header), RecordHeader::RAW_SIZE);
         uint16_t bytesToRead = header.recordLengthAfterHeader;
-        header.data.reserve(bytesToRead);
+        header.data.resize(bytesToRead);
         fileStream.read(header.data.data(), bytesToRead);
       }
     }
