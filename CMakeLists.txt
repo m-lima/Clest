@@ -1,17 +1,27 @@
 cmake_minimum_required(VERSION 3.2)
 project(Clest CXX)
 
+# Handle Mac's Clang
 if(APPLE)
   set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
 endif()
 
+STRING(REGEX REPLACE "\\\\" "/" ENV_HOME_DIR $ENV{HOME})
+
+# Add custom modules
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/findcmake")
+
+# Set base directories
 set(CPP_SRC_DIR "src/cpp")
 set(OPENCL_SRC_DIR "src/opencl")
 
+# Add manual libs
 list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 
+# Help FIND_PACKAGE
 if(WIN32)
   set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
+  set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/msvc")
 else()
   set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
 endif()
@@ -26,15 +36,21 @@ list(APPEND LIBRARIES ${OpenCL_LIBRARIES})
 message(STATUS "OpenCL Include: " "${OpenCL_INCLUDE_DIR}")
 message(STATUS "OpenCL Libraries: " "${OpenCL_LIBRARIES}")
 
-find_package(Boost REQUIRED)
-list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIR})
-list(APPEND LIBRARIES ${Boost_LIBRARY_DIR})
+find_package(Boost 1.62 REQUIRED)
+list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
+list(APPEND LIBRARIES ${Boost_LIBRARIES})
 message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
 
 add_subdirectory(fmt)
 list(APPEND INCLUDE_DIRS fmt)
 list(APPEND LIBRARIES fmt)
+
+find_package(CGAL REQUIRED)
+list(APPEND INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
+list(APPEND LIBRARIES ${CGAL_LIBRARIES})
+message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
+message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
 
 # add_subdirectory(laslib)
 # list(APPEND INCLUDE_DIRS laslib)
