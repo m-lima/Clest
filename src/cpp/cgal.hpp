@@ -11,12 +11,10 @@ namespace {
 namespace clest {
 #ifdef CGAL_LINKED_WITH_TBB
   void wlopParallel() {
-    CGAL::wlop_simplify_and_regularize_point_set()
   }
-#else
+#endif
   void wlopSequential() {
     CGAL::Simple_cartesian<double>::Point_3 point;
   }
-#endif
 }
 #endif // CLEST_CGAL_HPP

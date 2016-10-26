@@ -20,10 +20,12 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 
 # Help FIND_PACKAGE
 if(WIN32)
-  set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
+  # set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
   set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/msvc")
+  set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
+  set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Bin/tbb2017_20160916oss")
 else()
-  set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
+  # set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
 endif()
 
 ##------------------------------------------------------------------------------
@@ -51,6 +53,15 @@ list(APPEND INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
 list(APPEND LIBRARIES ${CGAL_LIBRARIES})
 message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
 message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
+
+find_package(TBB REQUIRED)
+include_directories ( ${TBB_INCLUDE_DIRS} )
+link_directories( ${TBB_LIBRARY_DIRS} )
+add_definitions( -DNOMINMAX -DCGAL_LINKED_WITH_TBB )
+list(APPEND INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
+list(APPEND LIBRARIES ${TBB_LIBRARIES})
+message(STATUS "TBB Include: " "${TBB_INCLUDE_DIRS}")
+message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
 
 # add_subdirectory(laslib)
 # list(APPEND INCLUDE_DIRS laslib)

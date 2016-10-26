@@ -39,6 +39,16 @@ namespace {
 }
 
 int main(int argc, char ** argv) {
+#ifdef DEBUG
+  fmt::print("Running in DEBUG mode\n");
+#endif
+#ifdef _DEBUG
+  fmt::print("Running in _DEBUG mode\n");
+#endif
+#ifdef NDEBUG
+  fmt::print("Running in NDEBUG mode\n\n");
+#endif
+  
   if (argc != 2) {
     fmt::print(stderr, "Expected 1 parameter and got {}. Please specify a valid LAS file to be loaded.\n", argc - 1);
     return 1;
