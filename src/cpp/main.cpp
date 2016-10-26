@@ -5,6 +5,7 @@
 #include "util.hpp"
 #include "las/LASFile.hpp"
 #include "colorizer.hpp"
+#include "cgal.hpp"
 
 using namespace clest;
 
@@ -48,7 +49,7 @@ int main(int argc, char ** argv) {
 #ifdef NDEBUG
   fmt::print("Running in NDEBUG mode\n\n");
 #endif
-  
+
   if (argc != 2) {
     fmt::print(stderr, "Expected 1 parameter and got {}. Please specify a valid LAS file to be loaded.\n", argc - 1);
     return 1;
@@ -87,7 +88,7 @@ int main(int argc, char ** argv) {
         uint32_t y = minY + deltaY * j;
         for (int k = 0; k < FACTOR; k++) {
           uint32_t z = minZ + deltaZ * k;
-          count += lasFile.loadChunk(x, x + deltaX, y, y + deltaY, z, z + deltaZ);
+          count += lasFile.loadData(Limits<uint32_t>(x, x + deltaX, y, y + deltaY, z, z + deltaZ));
           fmt::print("Total: {}\n", count);
           fmt::print(" Step: {}/{}\n\n", k + (FACTOR * j) + (FACTOR * FACTOR * i) + 1, FACTOR * FACTOR * FACTOR);
         }
@@ -95,10 +96,11 @@ int main(int argc, char ** argv) {
     }
   }
 #else
-  fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
-  lasFile.loadData();
-  fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
+  //fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
+  //lasFile.loadData();
+  //fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
   //colorize(lasFile);
+  wlopParallel(lasFile);
 #endif
 
   // Verbose all platforms and devices

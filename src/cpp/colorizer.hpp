@@ -10,7 +10,7 @@ using namespace las;
 namespace {
 
   template <typename T>
-  void iterateAndSetColor(const LASFile<T> & file, std::vector<PointData<2>> & output) {
+  std::vector<PointData<2>> iterateAndSetColor(const LASFile<T> & file) {
     constexpr uint16_t BUFFER_SIZE = 8192;
     constexpr uint16_t MAX_COLOR = 0xFFFF;
 
@@ -22,7 +22,7 @@ namespace {
     
     PointData<2> newPoint;
     newPoint.green = 0;
-    output.resize(0);
+    std::vector<PointData<2>> output;
     output.reserve(dataPointCount);
     T *base;
     char data[BUFFER_SIZE];
@@ -48,6 +48,9 @@ namespace {
         currentPoint++;
       }
     }
+
+    fileStream.close();
+    return output;
   }
 }
 
@@ -69,7 +72,7 @@ namespace clest {
     newFile.publicHeader.pointDataRecordLength = sizeof(las::PointData<2>);
     newFile.recordHeaders = lasFile.recordHeaders;
 
-    iterateAndSetColor(lasFile, newFile.pointData);
+    iterateAndSetColor(lasFile);
 
     newFile.save();
   }

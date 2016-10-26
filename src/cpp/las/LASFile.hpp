@@ -22,14 +22,7 @@ namespace las {
     const std::string filePath;
 
     void loadHeaders();
-    uint64_t loadData(
-      uint32_t minX = -1,
-      uint32_t maxX = 0,
-      uint32_t minY = -1,
-      uint32_t maxY = 0,
-      uint32_t minZ = -1,
-      uint32_t maxZ = 0
-    );
+    uint64_t loadData(const Limits<uint32_t> & limits = Limits<uint32_t>());
     uint64_t pointDataCount() const;
     void save() const {
       save(filePath);

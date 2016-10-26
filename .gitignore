@@ -24,6 +24,8 @@ nbproject/
 *.so
 *.dylib
 *.dll
+*.pdb
+*.ilk
 
 # Fortran module files
 *.mod

@@ -21,12 +21,7 @@ namespace {
     std::ifstream & in,
     std::vector<T> & container,
     uint64_t max,
-    uint32_t minX = -1,
-    uint32_t maxX = 0,
-    uint32_t minY = -1,
-    uint32_t maxY = 0,
-    uint32_t minZ = -1,
-    uint32_t maxZ = 0
+    const las::Limits<uint32_t> & limits
   ) {
     container.clear();
     uint64_t count = 0;
@@ -40,13 +35,7 @@ namespace {
     uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
 
     char data[BUFFER_SIZE];
-    if (
-      minX == -1 &&
-      maxX == 0 &&
-      minY == -1 &&
-      maxY == 0 &&
-      minZ == -1 &&
-      maxZ == 0) {
+    if (limits.isMaxed()) {
       while (count < max && in.good()) {
         in.read(data, blockSize);
         for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
@@ -62,10 +51,7 @@ namespace {
         for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
           base = reinterpret_cast<T*>(data + i);
           count++;
-          if (base->x < minX || base->y < minY || base->z < minZ
-              || base->x >= maxX || base->y >= maxY || base->z >= maxZ) {
-            continue;
-          }
+          if (limits.isOutside(base->x, base->y, base->z)) { continue; }
           container.push_back(*base);
           iCount++;
         }
@@ -128,14 +114,7 @@ namespace las {
   }
 
   template <typename T>
-  uint64_t LASFile<T>::loadData(
-    uint32_t minX,
-    uint32_t maxX,
-    uint32_t minY,
-    uint32_t maxY,
-    uint32_t minZ,
-    uint32_t maxZ
-  ) {
+  uint64_t LASFile<T>::loadData(const Limits<uint32_t> & limits) {
     std::ifstream fileStream(filePath, std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
       throw std::runtime_error(fmt::format("Could not open file {}", filePath));
@@ -148,12 +127,7 @@ namespace las {
       fileStream,
       pointData,
       _pointDataCount,
-      minX, 
-      maxX,
-      minY,
-      maxY,
-      minZ,
-      maxZ
+      limits
       );
 
     fileStream.close();
@@ -186,5 +160,6 @@ namespace las {
   }
 
   template class LASFile<PointData<-1>>;
+  template class LASFile<PointData<0>>;
   template class LASFile<PointData<2>>;
 }

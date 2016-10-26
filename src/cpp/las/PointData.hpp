@@ -1,8 +1,53 @@
 #ifndef LAS_POINT_DATA_HPP
 #define LAS_POINT_DATA_HPP
 
-#pragma pack(push, 1)
+#include <limits>
+
 namespace las {
+  template <typename T>
+  struct Limits {
+    T minX = std::numeric_limits<T>::max();
+    T maxX = std::numeric_limits<T>::min();
+    T minY = std::numeric_limits<T>::max();
+    T maxY = std::numeric_limits<T>::min();
+    T minZ = std::numeric_limits<T>::max();
+    T maxZ = std::numeric_limits<T>::min();
+
+    Limits() = default;
+    Limits(T _minX, T _maxX, T _minY, T _maxY, T _minZ, T _maxZ) :
+      minX(_minX),
+      maxX(_maxX),
+      minY(_minY),
+      maxY(_maxY),
+      minZ(_minZ),
+      maxZ(_maxZ) {}
+
+    bool isMaxed() const {
+      return
+        minX == std::numeric_limits<T>::max() &&
+        maxX == std::numeric_limits<T>::min() &&
+        minY == std::numeric_limits<T>::max() &&
+        maxY == std::numeric_limits<T>::min() &&
+        minZ == std::numeric_limits<T>::max() &&
+        maxZ == std::numeric_limits<T>::min();
+    }
+
+    bool isOutside(T x, T y, T z) const {
+      return x < minX || y < minY || z < minZ
+        || x >= maxX || y >= maxY || z >= maxZ;
+    }
+
+    void update(T x, T y, T z) {
+      if (x < minX) { minX = x; }
+      if (x > maxX) { maxX = x; }
+      if (y < minY) { minY = y; }
+      if (y > maxY) { maxY = y; }
+      if (z < minZ) { minZ = z; }
+      if (z > maxZ) { maxZ = z; }
+    }
+  };
+
+#pragma pack(push, 1)
   struct CombinedValues {
     uint8_t data;
 
@@ -135,7 +180,7 @@ namespace las {
     float yT;
     float zT;
   };
-}
 #pragma pack(pop)
+}
 
 #endif	// LAS_POINT_DATA_HPP
