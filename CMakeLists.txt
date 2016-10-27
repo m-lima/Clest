@@ -21,7 +21,7 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 # Help FIND_PACKAGE
 if(WIN32)
   # set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
-  set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/nmake")
+  set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/msvc")
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
   set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Bin/tbb2017_20160916oss")
 else()
