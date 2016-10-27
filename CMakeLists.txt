@@ -20,10 +20,17 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 
 # Help FIND_PACKAGE
 if(WIN32)
-  # set(BOOST_ROOT "C:/Program Files/Boost/boost_1_62_0")
+
+  # Boost
+  set(BOOST_ROOT "${ENV_HOME_DIR}/Bin/Boost/boost_1_62_0")
+
+  # CGAL
   set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/msvc")
+
+  # TBB
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
   set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Bin/tbb2017_20160916oss")
+
 else()
   # set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
 endif()
@@ -45,7 +52,9 @@ list(APPEND LIBRARIES ${CGAL_LIBRARIES})
 message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
 message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
 
-find_package(Boost 1.62 REQUIRED)
+#set(Boost_USE_STATIC_LIBS ON)
+#find_package(Boost 1.62 REQUIRED)
+find_package(Boost 1.62 REQUIRED COMPONENTS date_time)
 list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
 list(APPEND LIBRARIES ${Boost_LIBRARIES})
 message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
