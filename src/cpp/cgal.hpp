@@ -2,9 +2,14 @@
 #define CLEST_CGAL_HPP
 
 #include <vector>
+
 #include <fmt/ostream.h>
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/wlop_simplify_and_regularize_point_set.h>
+
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 
 #include "las/LASFile.hpp"
 
@@ -67,25 +72,39 @@ namespace {
     return limits;
   }
 
-  void convertPoints(const std::vector<Point3> & points, las::LASFile<PointData<0>> & output) {
-    output.pointData.reserve(points.size());
+  struct PointConverter {
+    const std::vector<Point3> * const _in;
+    las::LASFile<PointData<0>> * const _out;
 
-    auto xScale = output.publicHeader.xScaleFactor;
-    auto yScale = output.publicHeader.yScaleFactor;
-    auto zScale = output.publicHeader.zScaleFactor;
+    const double xScale;
+    const double yScale;
+    const double zScale;
 
-    auto xOffset = output.publicHeader.xOffset;
-    auto yOffset = output.publicHeader.yOffset;
-    auto zOffset = output.publicHeader.zOffset;
+    const double xOffset;
+    const double yOffset;
+    const double zOffset;
 
-    las::PointData<0> dummy;
-    for (auto & point : points) {
-      dummy.x = static_cast<uint32_t>((point.x() - xOffset) / xScale);
-      dummy.y = static_cast<uint32_t>((point.y() - yOffset) / yScale);
-      dummy.z = static_cast<uint32_t>((point.z() - zOffset) / zScale);
-      output.pointData.push_back(dummy);
+    PointConverter(const std::vector<Point3> & in, las::LASFile<PointData<0>> & out) :
+      _in(&in), _out(&out),
+      xScale(out.publicHeader.xScaleFactor),
+      yScale(out.publicHeader.yScaleFactor),
+      zScale(out.publicHeader.zScaleFactor),
+      xOffset(out.publicHeader.xOffset),
+      yOffset(out.publicHeader.yOffset),
+      zOffset(out.publicHeader.zOffset) {}
+
+    void operator() (const tbb::blocked_range<uint32_t> & range) const {
+      las::PointData<0> dummy;
+      Point3 point;
+      for (uint32_t i = range.begin(); i != range.end(); ++i) {
+        point = (*_in)[i];
+        dummy.x = static_cast<uint32_t>((point.x() - xOffset) / xScale);
+        dummy.y = static_cast<uint32_t>((point.y() - yOffset) / yScale);
+        dummy.z = static_cast<uint32_t>((point.z() - zOffset) / zScale);
+        _out->pointData[i] = dummy;
+      }
     }
-  }
+  };
 }
 
 namespace clest {
@@ -129,7 +148,10 @@ namespace clest {
 
     newFile.recordHeaders = lasFile.recordHeaders;
     
-    convertPoints(output, newFile);
+    newFile.pointData.resize(output.size());
+    tbb::blocked_range<uint32_t> block(0, output.size());
+    tbb::parallel_for(block, PointConverter(output, newFile));
+
     output = std::vector<Point3>();
 
     newFile.save();
