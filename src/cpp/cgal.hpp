@@ -54,6 +54,7 @@ namespace {
     }
 
     fileStream.close();
+    return output;
   }
 
   Limits<double> getLimits(const std::vector<Point3> & container) {
@@ -117,7 +118,7 @@ namespace clest {
     newFile.publicHeader = lasFile.publicHeader;
     newFile.publicHeader.pointDataRecordFormat = 0;
     newFile.publicHeader.pointDataRecordLength = sizeof(las::PointData<0>);
-    newFile.publicHeader.legacyNumberOfPointRecords = output.size();
+    newFile.publicHeader.legacyNumberOfPointRecords = static_cast<uint32_t>(output.size());
     newFile.publicHeader.numberOfPointRecords = output.size();
     newFile.publicHeader.minX = limits.minX;
     newFile.publicHeader.maxX = limits.maxX;
