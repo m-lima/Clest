@@ -99,6 +99,7 @@ set(SOURCES
   ${CPP_SRC_DIR}/wlop.hpp
   ${CPP_SRC_DIR}/colorizer.hpp
   ${CPP_SRC_DIR}/cgal.hpp
+  ${CPP_SRC_DIR}/wlopSimplifyVerbose.hpp
   )
 
 set(OPENCL_SRC

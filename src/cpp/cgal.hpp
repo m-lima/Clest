@@ -6,12 +6,13 @@
 #include <fmt/ostream.h>
 
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/wlop_simplify_and_regularize_point_set.h>
+//#include <CGAL/wlop_simplify_and_regularize_point_set.h>
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
 #include "las/LASFile.hpp"
+#include "wlopSimplifyVerbose.hpp"
 
 using Point3 = CGAL::Simple_cartesian<double>::Point_3;
 
@@ -126,8 +127,9 @@ namespace clest {
       points.begin(),
       points.end(),
       std::back_inserter(output),
-      2,
-      0.5
+      10,
+      1,
+      35
       );
 
     points = std::vector<Point3>();
