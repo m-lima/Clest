@@ -43,11 +43,23 @@
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Bbox_3.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 namespace CGAL {
 // ----------------------------------------------------------------------------
 // Private section
 // ----------------------------------------------------------------------------
 /// \cond SKIP_IN_MANUAL
+
+  constexpr int TIMER_COUNT = 4;
+  boost::posix_time::ptime current[TIMER_COUNT];
+  boost::posix_time::ptime last[TIMER_COUNT];
+
+  void updateLast(int i) {
+    for (int j = TIMER_COUNT - 1; j >= i; j--) {
+      last[j] = current[i];
+    }
+  }
 
 namespace simplify_and_regularize_internal{
 
@@ -367,8 +379,18 @@ public:
 
   void operator() ( const tbb::blocked_range<size_t>& r ) const 
   { 
+    boost::posix_time::ptime tCurrent = boost::posix_time::second_clock::local_time();
+    boost::posix_time::ptime tLast = boost::posix_time::second_clock::local_time();
+
     for (size_t i = r.begin(); i != r.end(); ++i) 
     {
+      if (r.begin() == 0) {
+        if (i % ((r.end() - r.begin()) / 100) == 0) {
+          tCurrent = boost::posix_time::second_clock::local_time();
+          fmt::print("----- Samplepoint updater [{}%] [{} :: {}]\n", (i + 1) * 100 / (r.end() - r.begin()), boost::posix_time::to_simple_string(tCurrent), boost::posix_time::to_simple_string(tCurrent - tLast));
+          tLast = tCurrent;
+        }
+      }
       update_sample_points[i] = simplify_and_regularize_internal::
         compute_update_sample_point<Kernel, Tree, RandomAccessIterator>(
         sample_points[i], 
@@ -458,31 +480,31 @@ wlop_simplify_and_regularize_point_set(
   typedef CGAL::Orthogonal_k_neighbor_search<Tree_traits> Neighbor_search;
   typedef typename Neighbor_search::Tree Kd_Tree;
   
-  boost::posix_time::ptime current = boost::posix_time::second_clock::local_time();
-  boost::posix_time::ptime last = boost::posix_time::second_clock::local_time();
-  fmt::print("Entered WLOP [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  last[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Entered WLOP [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
 
   // precondition: at least one element in the container.
   // to fix: should have at least three distinct points
   // but this is costly to check
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Setting preconditions [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Setting preconditions [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   CGAL_point_set_processing_precondition(first != beyond);
   CGAL_point_set_processing_precondition(select_percentage >= 0 
                                          && select_percentage <= 100);
 
   // Random shuffle
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Random shuffle [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Random shuffle [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   std::random_shuffle (first, beyond);
 
   // Computes original(input) and sample points size 
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Create copy [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Create copy [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   std::size_t number_of_original = std::distance(first, beyond);
   std::size_t number_of_sample = (std::size_t)(FT(number_of_original) * 
                                  (select_percentage / FT(100.0)));
@@ -505,9 +527,9 @@ wlop_simplify_and_regularize_point_set(
   }
   
   //compute default neighbor_radius, if no radius in
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Compute default neighbor radius [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Compute default neighbor radius [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   if (radius < 0)
   {
     const unsigned int nb_neighbors = 6; // 1 ring
@@ -528,9 +550,9 @@ wlop_simplify_and_regularize_point_set(
   CGAL_point_set_processing_precondition(radius > 0);
 
   // Initiate a KD-tree search for original points
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Initiate a KD-tree search for original points [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Initiate a KD-tree search for original points [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   std::vector<Kd_tree_element> original_treeElements;
   for (it = first_original_iter, i=0 ; it != beyond ; ++it, ++i)
     original_treeElements.push_back( Kd_tree_element(get(point_pmap, *it), i) );
@@ -542,20 +564,23 @@ wlop_simplify_and_regularize_point_set(
   typename std::vector<Point>::iterator sample_iter;
   
   // Compute original density weight for original points if user needed
-  current = boost::posix_time::second_clock::local_time();
-  fmt::print("Compute original density weight for original points if user needed [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-  last = current;
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Compute original density weight for original points if user needed [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+  updateLast(0);
   std::vector<FT> original_density_weights;
 
-  uint64_t counter_ = 0;
+  uint64_t counter_ = 1;
   if (require_uniform_sampling)//default value is false
   {
     //todo: this part could also be parallelized if needed
+    current[0] = boost::posix_time::second_clock::local_time();
+    fmt::print("Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
+    updateLast(0);
     for (it = first_original_iter, i = 0; it != beyond ; ++it, ++i)
     {
-      current = boost::posix_time::second_clock::local_time();
-      fmt::print("Simplify and regularize [{}/?] [{} :: {}]\n", counter_++, boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-      last = current;
+      current[1] = boost::posix_time::second_clock::local_time();
+      fmt::print("- Simplify and regularize [{}/{}] [{} :: {}]\n", counter_++, beyond - first_original_iter, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
+      updateLast(1);
       FT density = simplify_and_regularize_internal::
                    compute_density_weight_for_original_point<Kernel, Kd_Tree>
                                          (
@@ -567,15 +592,18 @@ wlop_simplify_and_regularize_point_set(
     }
   }
 
+  current[0] = boost::posix_time::second_clock::local_time();
+  fmt::print("Main loop [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
+  updateLast(0);
   for (unsigned int iter_n = 0; iter_n < iter_number; ++iter_n)
   {
-    current = boost::posix_time::second_clock::local_time();
-    fmt::print("Main loop [{}/{}] [{} :: {}]\n", iter_n + 1, iter_number, boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-    last = current;
+    current[1] = boost::posix_time::second_clock::local_time();
+    fmt::print("- Main loop [{}/{}] [{} :: {}]\n", iter_n + 1, iter_number, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
+    updateLast(1);
     // Initiate a KD-tree search for sample points
-    current = boost::posix_time::second_clock::local_time();
-    fmt::print("- Initiate a KD-tree search for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-    last = current;
+    current[2] = boost::posix_time::second_clock::local_time();
+    fmt::print("--- Initiate a KD-tree search for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+    updateLast(2);
     std::vector<Kd_tree_element> sample_treeElements;
     for (i=0 ; i < sample_points.size(); i++)
     {
@@ -585,17 +613,22 @@ wlop_simplify_and_regularize_point_set(
     Kd_Tree sample_kd_tree(sample_treeElements.begin(), sample_treeElements.end());
 
     // Compute sample density weight for sample points
-    current = boost::posix_time::second_clock::local_time();
-    fmt::print("- Compute sample density weight for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-    last = current;
+    current[2] = boost::posix_time::second_clock::local_time();
+    fmt::print("--- Compute sample density weight for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+    updateLast(2);
     std::vector<FT> sample_density_weights;
 
-    current = boost::posix_time::second_clock::local_time();
-    fmt::print("- Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-    last = current;
+    current[2] = boost::posix_time::second_clock::local_time();
+    fmt::print("--- Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+    updateLast(2);
     for (sample_iter = sample_points.begin();
          sample_iter != sample_points.end(); ++sample_iter)
     {
+      if ((sample_iter - sample_points.begin()) % (sample_points.size() / 100) == 0) {
+        current[3] = boost::posix_time::second_clock::local_time();
+        fmt::print("----- Simplify and regularize [{}%] [{} :: {}]\n", ((sample_iter - sample_points.begin()) + 1) * 100 / sample_points.size(), boost::posix_time::to_simple_string(current[3]), boost::posix_time::to_simple_string(current[3] - last[3]));
+        updateLast(3);
+      }
       FT density = simplify_and_regularize_internal::
                    compute_density_weight_for_sample_point<Kernel, Kd_Tree>
                    (*sample_iter, 
@@ -614,9 +647,9 @@ wlop_simplify_and_regularize_point_set(
     //parallel
     if (boost::is_convertible<Concurrency_tag, Parallel_tag>::value)
     {
-      current = boost::posix_time::second_clock::local_time();
-      fmt::print("- **Sample point updater** [{} :: {}]\n", boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-      last = current;
+      current[2] = boost::posix_time::second_clock::local_time();
+      fmt::print("--- Sample point updater [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+      updateLast(2);
       tbb::blocked_range<size_t> block(0, number_of_sample);
       Sample_point_updater<Kernel, Kd_Tree, RandomAccessIterator> sample_updater(
                            update_sample_points,
@@ -636,9 +669,6 @@ wlop_simplify_and_regularize_point_set(
       for (sample_iter = sample_points.begin();
         sample_iter != sample_points.end(); ++sample_iter, ++update_iter)
       {
-        current = boost::posix_time::second_clock::local_time();
-        fmt::print("- **Sample point updater** Seq!!! [{}/{}] [{} :: {}]\n", counter_++, sample_points.size(), boost::posix_time::to_simple_string(current), boost::posix_time::to_simple_string(current-last));
-        last = current;
         *update_iter = simplify_and_regularize_internal::
           compute_update_sample_point<Kernel,
                                       Kd_Tree,

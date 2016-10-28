@@ -140,8 +140,21 @@ namespace las {
   }
 
   template<typename T>
-  void LASFile<T>::save(const std::string & file) const {
+  void LASFile<T>::save(std::string file) const {
+    do {
+      std::ifstream testFile(file, std::ifstream::in);
+
+      if (!testFile.is_open()) {
+        break;
+      }
+
+      testFile.close();
+
+      file = "new." + file;
+    } while (true);
+
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
+
     if (!fileStream.is_open()) {
       throw std::runtime_error(fmt::format("Could not open file {}", filePath));
     }

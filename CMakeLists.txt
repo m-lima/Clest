@@ -96,10 +96,9 @@ set(SOURCES
   ${CPP_SRC_DIR}/las/PointData.hpp
   ${CPP_SRC_DIR}/las/LASFile.hpp
   ${CPP_SRC_DIR}/las/LASFile.cpp
-  ${CPP_SRC_DIR}/wlop.hpp
-  ${CPP_SRC_DIR}/colorizer.hpp
-  ${CPP_SRC_DIR}/cgal.hpp
-  ${CPP_SRC_DIR}/wlopSimplifyVerbose.hpp
+  ${CPP_SRC_DIR}/las/Operations.hpp
+  ${CPP_SRC_DIR}/las/Operations.cpp
+  ${CPP_SRC_DIR}/las/WlopSimplifyVerbose.hpp
   )
 
 set(OPENCL_SRC

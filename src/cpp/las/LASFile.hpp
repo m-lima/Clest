@@ -27,7 +27,7 @@ namespace las {
     void save() const {
       save(filePath);
     }
-    void save(const std::string & file) const;
+    void save(std::string file) const;
 
   private:
     uint64_t _pointDataCount;

@@ -6,40 +6,11 @@
 
 #include "util.hpp"
 #include "las/LASFile.hpp"
-#include "colorizer.hpp"
-#include "cgal.hpp"
+#include "las/Operations.hpp"
 
 using namespace clest;
 
 namespace {
-  const std::string _simplifyValue(double value) {
-    if (value < 1000) {
-      return fmt::format("{:d}", value);
-    }
-
-    value /= 1000.0;
-    if (value < 1000) {
-      return fmt::format("{:03.2f} thousand", value);
-    }
-
-    value /= 1000.0;
-    if (value < 1000) {
-      return fmt::format("{:03.2f} million", value);
-    }
-
-    value /= 1000.0;
-    if (value < 1000) {
-      return fmt::format("{:03.2f} billion", value);
-    }
-
-    value /= 1000.0;
-    if (value < 1000) {
-      return fmt::format("{:03.2f} trillion", value);
-    }
-
-    return "<invalid>";
-  }
-
   int executeCL() {
     // Verbose all platforms and devices
     if (!util::listALL()) {
@@ -85,7 +56,7 @@ namespace {
       constexpr unsigned int workItemCount = 0x10000;
       constexpr unsigned int workItemIterations = 0x100;
       constexpr unsigned int dataSize = workItemCount * workItemIterations;
-      fmt::print("Global range: {} points\n", _simplifyValue(globalRepeats * dataSize));
+      fmt::print("Global range: {} points\n", util::simplifyValue(globalRepeats * dataSize));
 
       // Create data (local array and remote buffer)
       fmt::print("Creating local array");
@@ -166,9 +137,9 @@ namespace {
 
   template <typename T>
   void executeLoadAll(las::LASFile<T> & lasFile) {
-    fmt::print("Loading {} points\n", _simplifyValue(static_cast<double>(lasFile.pointDataCount())));
+    fmt::print("Loading {} points\n", util::simplifyValue(static_cast<double>(lasFile.pointDataCount())));
     lasFile.loadData();
-    fmt::print("Loaded {} points\n\n", _simplifyValue(static_cast<double>(lasFile.pointData.size())));
+    fmt::print("Loaded {} points\n\n", util::simplifyValue(static_cast<double>(lasFile.pointData.size())));
   }
 
   template <typename T>

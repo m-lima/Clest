@@ -10,6 +10,33 @@
 
 namespace clest {
   namespace util {
+    const std::string simplifyValue(double value) {
+      if (value < 1000) {
+        return fmt::format("{:d}", value);
+      }
+
+      value /= 1000.0;
+      if (value < 1000) {
+        return fmt::format("{:03.2f} thousand", value);
+      }
+
+      value /= 1000.0;
+      if (value < 1000) {
+        return fmt::format("{:03.2f} million", value);
+      }
+
+      value /= 1000.0;
+      if (value < 1000) {
+        return fmt::format("{:03.2f} billion", value);
+      }
+
+      value /= 1000.0;
+      if (value < 1000) {
+        return fmt::format("{:03.2f} trillion", value);
+      }
+
+      return "<invalid>";
+    }
 
     bool isBigEndian() {
       union {
