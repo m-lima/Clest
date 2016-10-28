@@ -14,6 +14,29 @@
 #include "LASFile.hpp"
 #include "PointData.hpp"
 
+/***********
+* FUNCTOR FILE ITERATOR
+*
+* CHECK IF DATA IS ALREADY LOADED
+*
+*
+*
+*
+*
+*
+*
+*
+* T
+* O
+* |
+* D
+* O
+*
+*
+*
+*
+**************/
+
 using Point3 = CGAL::Simple_cartesian<double>::Point_3;
 
 namespace las {
@@ -37,6 +60,11 @@ namespace las {
     if (lasFile.pointDataCount() < 1) {
       throw std::runtime_error(fmt::format("Trying to {}, but {} seems to be empty", action, lasFile.filePath));
     }
+  }
+
+  template <typename T>
+  std::vector<T> loadRandomPoints(const LASFile<T> & file, const vector<uint64_t> & indices) {
+
   }
 
   template <typename T>
@@ -209,7 +237,10 @@ namespace las {
     }
     std::random_shuffle(indices.begin(), indices.end());
 
-    
+    indices.resize(newSize);
+    std::sort(indices.begin(), indices.end());
+
+    newFile.pointData = loadRandomPoints(lasFile, indices);
   }
 
 #ifdef CGAL_LINKED_WITH_TBB
