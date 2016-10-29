@@ -16,7 +16,7 @@
 
 using Point3 = CGAL::Simple_cartesian<double>::Point_3;
 
-namespace las {
+namespace {
 
   /// Convenience function to add a "tag" to a las file.
   /// Tags are identifiers such as: "wlop", "color", "new", etc.
@@ -26,7 +26,7 @@ namespace las {
   /// If the file does not contain a .las extension, the tag will be
   /// appended to the end of the file name and the .las extension will
   /// be added
-  std::string generateName(const std::string & path, const std::string & tag) {
+  std::string _generateName(const std::string & path, const std::string & tag) {
     // If it is empty, the name will be simply <tag>.las
     if (path.empty()) {
       return tag + ".las";
@@ -44,8 +44,8 @@ namespace las {
   /// It considers the public header sanity check and the amount of points
   /// referenced by the header (must not be empty)
   template <typename T>
-  void validateLAS(const LASFile<T> & lasFile, const std::string & action) {
-    if (!isLasValid(lasFile.publicHeader)) {
+  void _validateLAS(const las::LASFile<T> & lasFile, const std::string & action) {
+    if (!lasFile.isValid()) {
       throw std::runtime_error(fmt::format("Trying to {}, but {} seems to be corrupted", action, lasFile.filePath));
     }
 
@@ -65,7 +65,7 @@ namespace las {
   /// Also, the functor/lambda should take a `T` as parameter and a
   /// `uint64_t` current position pointer
   template <typename T, typename F>
-  void mainIterator(const LASFile<T> & file, const F & func, bool forceFromFile = false) {
+  void _mainIterator(const las::LASFile<T> & file, const F & func, bool forceFromFile = false) {
 
     // Get the point count from the header
     uint64_t dataPointCount = file.pointDataCount();
@@ -75,10 +75,14 @@ namespace las {
 
       // Prepare read buffer and memory pointer
       // The buffer will read as many `T` as it can pack inside BUFFER_SIZE
-      /// If `sizeof(T)` exceeds `BUFFER_SIZE`, the behavior is undefined ///
       constexpr uint16_t BUFFER_SIZE = 8192;
       uint16_t typeSize = file.publicHeader.pointDataRecordLength;
       uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
+
+      // If `BUFFER_SIZE` cannot hold a single `T` element, throw
+      if (BUFFER_SIZE < typeSize) {
+        throw std::runtime_error(fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})", BUFFER_SIZE, typeSize));
+      }
 
       uint64_t currentPoint = 0;
       T *base;
@@ -111,8 +115,7 @@ namespace las {
       // Close the stream
       fileStream.close();
 
-      // Read from memory (in parallel)
-    } else {
+    } else { // Read from memory (in parallel)
 
       // Create blocks of memory to parallelize
       tbb::blocked_range<uint64_t> block(0, file.pointData.size());
@@ -130,8 +133,8 @@ namespace las {
   /// and max values for x, y, and z.
   /// Could be parallelized, but performance gain is not significant
   template <typename T>
-  Limits<double> getLimits(const std::vector<T> & container) {
-    Limits<double> limits;
+  las::Limits<double> _getLimits(const std::vector<T> & container) {
+    las::Limits<double> limits;
 
     for (auto & point : container) {
       limits.update(point.x, point.y, point.z);
@@ -143,8 +146,8 @@ namespace las {
   /// Template full specialization for `Point3`
   /// since it uses a function to access the coordinates
   template<>
-  Limits<double> getLimits(const std::vector<Point3> & container) {
-    Limits<double> limits;
+  las::Limits<double> _getLimits(const std::vector<Point3> & container) {
+    las::Limits<double> limits;
 
     for (auto & point : container) {
       limits.update(point.x(), point.y(), point.z());
@@ -158,11 +161,11 @@ namespace las {
   /// The `Point3` will save the coordinates in double value, i.e., it will
   /// convert the unsigned int value from LAS to double by applying the
   /// header modifiers for scale and offset
-  struct PointConverter {
+  struct _PointConverter {
 
     // Helper variables
     const std::vector<Point3> * const _in;
-    LASFile<PointData<0>> * const _out;
+    las::LASFile<las::PointData<0>> * const _out;
 
     const double xScale;
     const double yScale;
@@ -173,7 +176,7 @@ namespace las {
     const double zOffset;
 
     // Constructor to set `const` values
-    PointConverter(const std::vector<Point3> & in, LASFile<PointData<0>> & out) :
+    _PointConverter(const std::vector<Point3> & in, las::LASFile<las::PointData<0>> & out) :
       _in(&in), _out(&out),
       xScale(out.publicHeader.xScaleFactor),
       yScale(out.publicHeader.yScaleFactor),
@@ -184,7 +187,7 @@ namespace las {
 
     // Function call to convert
     void operator() (const tbb::blocked_range<uint64_t> & range) const {
-      PointData<0> dummy;
+      las::PointData<0> dummy;
       Point3 point;
       for (uint64_t i = range.begin(); i != range.end(); ++i) {
         point = (*_in)[i];
@@ -195,7 +198,9 @@ namespace las {
       }
     }
   };
+}
 
+namespace las {
   /// Iterates the points from the file and changes the color according
   /// to it's position in storage
   ///
@@ -205,9 +210,9 @@ namespace las {
   /// minimum necessary for a RGB point cloud
   template <typename T>
   void colorize(const LASFile<T> & lasFile) {
-    validateLAS(lasFile, "colorize LAS file");
+    _validateLAS(lasFile, "colorize LAS file");
 
-    LASFile<PointData<2>> newFile(generateName(lasFile.filePath, "color"));
+    LASFile<PointData<2>> newFile(_generateName(lasFile.filePath, "color"));
 
     // Copy the headers and change the pertinent values
     newFile.publicHeader = lasFile.publicHeader;
@@ -220,7 +225,7 @@ namespace las {
     auto dataPointCount = lasFile.pointDataCount();
     newFile.pointData.resize(dataPointCount);
 
-    mainIterator(lasFile, [&](T point, auto index) {
+    _mainIterator(lasFile, [&](T point, auto index) {
 
       // This is safe because `PointData<2>` first address that is not
       // part of the base `PointData` is the RED `uint16_t`
@@ -262,10 +267,10 @@ namespace las {
     if (!(factor > 0.0 && factor <= 100.0)) {
       throw std::runtime_error("Factor has to be from 0% to 100%");
     }
-    validateLAS(lasFile, "simplify LAS");
+    _validateLAS(lasFile, "simplify LAS");
 
     // Create a new file
-    LASFile<T> newFile(generateName(lasFile.filePath, "simple"));
+    LASFile<T> newFile(_generateName(lasFile.filePath, "simple"));
 
     // Calculate the new size
     uint64_t newSize = static_cast<uint64_t>(lasFile.pointDataCount() * factor / 100.0);
@@ -299,7 +304,7 @@ namespace las {
 
       // Since the index vector is sorted, use an incrementing pointer
       // to decide wheter to add
-      mainIterator(lasFile, [&](T point, auto index) {
+      _mainIterator(lasFile, [&](T point, auto index) {
         if (currentIndex != newSize && index == indices[currentIndex]) {
           newFile.pointData.push_back(point);
           currentIndex++;
@@ -308,7 +313,7 @@ namespace las {
     }
 
     // Get the new limits
-    Limits<double> limits = getLimits(newFile.pointData);
+    Limits<double> limits = _getLimits(newFile.pointData);
 
     // Copy the headers and change the pertinent values
     newFile.publicHeader = lasFile.publicHeader;
@@ -332,7 +337,7 @@ namespace las {
                     const double radius,
                     const unsigned int iterations,
                     const bool uniform) {
-    validateLAS(lasFile, "execute WLOP");
+    _validateLAS(lasFile, "execute WLOP");
 
     // Prepare the variables for `Point3` conversion
     auto xScale = lasFile.publicHeader.xScaleFactor;
@@ -346,7 +351,7 @@ namespace las {
     // Convert the points from `T` to `Point3`
     std::vector<Point3> points;
     points.reserve(lasFile.pointDataCount());
-    mainIterator(lasFile, [&](T point, auto currentPoint) {
+    _mainIterator(lasFile, [&](T point, auto currentPoint) {
       points.push_back(Point3(point.x * xScale + xOffset,
                               point.y * yScale + yOffset,
                               point.z * zScale + zOffset));
@@ -368,10 +373,10 @@ namespace las {
     points = std::vector<Point3>();
 
     // Get the new limits
-    Limits<double> limits = getLimits(output);
+    Limits<double> limits = _getLimits(output);
 
     // Copy the headers and change the pertinent values
-    LASFile<PointData<0>> newFile(generateName(lasFile.filePath, "wlop"));
+    LASFile<PointData<0>> newFile(_generateName(lasFile.filePath, "wlop"));
     newFile.publicHeader = lasFile.publicHeader;
     newFile.publicHeader.pointDataRecordFormat = 0;
     newFile.publicHeader.pointDataRecordLength = sizeof(PointData<0>);
@@ -390,7 +395,7 @@ namespace las {
     // a parallel fashion
     newFile.pointData.resize(output.size());
     tbb::blocked_range<uint64_t> block(0, output.size());
-    tbb::parallel_for(block, PointConverter(output, newFile));
+    tbb::parallel_for(block, _PointConverter(output, newFile));
 
     // Free the memory
     output = std::vector<Point3>();

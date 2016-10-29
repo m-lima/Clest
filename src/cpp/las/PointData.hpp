@@ -73,6 +73,7 @@ namespace las {
 
   template<>
   struct PointData<-1> {
+    static constexpr int FORMAT = -1;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -80,6 +81,7 @@ namespace las {
 
   template <>
   struct PointData<0> {
+    static constexpr int FORMAT = 0;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -93,6 +95,7 @@ namespace las {
 
   template <>
   struct PointData<1> {
+    static constexpr int FORMAT = 1;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -107,6 +110,7 @@ namespace las {
 
   template <>
   struct PointData<2> {
+    static constexpr int FORMAT = 2;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -123,6 +127,7 @@ namespace las {
 
   template <>
   struct PointData<3> {
+    static constexpr int FORMAT = 3;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -140,6 +145,7 @@ namespace las {
 
   template <>
   struct PointData<4> {
+    static constexpr int FORMAT = 4;
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -160,6 +166,7 @@ namespace las {
 
   template <>
   struct PointData<5> {
+    static constexpr int FORMAT = 5;
     uint32_t x;
     uint32_t y;
     uint32_t z;

@@ -195,9 +195,9 @@ namespace {
 
     executeLoadAll(lasFile);
     //executeLoadChunks(lasFile);
-    executeSimplify(lasFile, 25);
-    executeColorize(lasFile);
-    executeCGALWLOP(lasFile, 1, -1, 1, false);
+    //executeSimplify(lasFile, 25);
+    //executeColorize(lasFile);
+    //executeCGALWLOP(lasFile, 1, -1, 1, false);
     //returnValue = executeCL();  
 
     return returnValue;
@@ -221,13 +221,13 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  fmt::print("Starting CLEST [{}]", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
+  fmt::print("Starting CLEST [{}]\n", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
 
   las::LASFile<las::PointData<-1>> dummyLasFile(argv[1]);
   fmt::print("Loading LAS file:\n{}\n", argv[1]);
   dummyLasFile.loadHeaders();
 
-  if (!las::isLasValid(dummyLasFile.publicHeader)) {
+  if (!dummyLasFile.isValid()) {
     fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", dummyLasFile.filePath);
     return 1;
   }
@@ -251,7 +251,7 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  fmt::print("Finished CLEST [{}]", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
+  fmt::print("Finished CLEST [{}]\n", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
 
   return returnValue;
 

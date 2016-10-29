@@ -7,9 +7,6 @@
 #include "PointData.hpp"
 
 namespace las {
-
-  bool isLasValid(const PublicHeader & header);
-
   template <typename T>
   class LASFile {
   public:
@@ -21,6 +18,7 @@ namespace las {
 
     const std::string filePath;
 
+    bool isValid() const;
     void loadHeaders();
     uint64_t loadData(const Limits<uint32_t> & limits = Limits<uint32_t>());
     uint64_t pointDataCount() const;
