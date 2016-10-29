@@ -12,7 +12,11 @@ namespace las {
 
 #ifdef CGAL_LINKED_WITH_TBB
   template <typename T>
-  void wlopParallel(const LASFile<T> & lasFile);
+  void wlopParallel(const LASFile<T> & lasFile,
+                    const double percentage,
+                    const double radius,
+                    const unsigned int iterations,
+                    const bool uniform);
 #endif
 }
 #endif // LAS_OPERATIONS_HPP

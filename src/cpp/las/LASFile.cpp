@@ -150,7 +150,10 @@ namespace las {
 
       testFile.close();
 
-      file = "new." + file;
+      auto index = file.rfind(".las");
+
+      if (index == std::string::npos) { file += ".las"; }
+      else { file = file.substr(0, index) + ".new.las"; }
     } while (true);
 
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
@@ -174,5 +177,8 @@ namespace las {
 
   template class LASFile<PointData<-1>>;
   template class LASFile<PointData<0>>;
+  template class LASFile<PointData<1>>;
   template class LASFile<PointData<2>>;
+  template class LASFile<PointData<3>>;
+
 }

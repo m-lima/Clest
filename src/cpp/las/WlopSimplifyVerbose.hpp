@@ -381,13 +381,15 @@ public:
   { 
     boost::posix_time::ptime tCurrent = boost::posix_time::second_clock::local_time();
     boost::posix_time::ptime tLast = boost::posix_time::second_clock::local_time();
+    size_t range = r.end() - r.begin();
+    if (range < 100) { range = 100; }
 
     for (size_t i = r.begin(); i != r.end(); ++i) 
     {
       if (r.begin() == 0) {
-        if (i % ((r.end() - r.begin()) / 100) == 0) {
+        if (i % (range / 100) == 0) {
           tCurrent = boost::posix_time::second_clock::local_time();
-          fmt::print("----- Samplepoint updater [{}%] [{} :: {}]\n", (i + 1) * 100 / (r.end() - r.begin()), boost::posix_time::to_simple_string(tCurrent), boost::posix_time::to_simple_string(tCurrent - tLast));
+          fmt::print("----- Samplepoint updater [{}%] [{} :: {}]\n", (i + 1) * 100 / range, boost::posix_time::to_simple_string(tCurrent), boost::posix_time::to_simple_string(tCurrent - tLast));
           tLast = tCurrent;
         }
       }

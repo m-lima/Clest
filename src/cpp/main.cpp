@@ -137,25 +137,70 @@ namespace {
 
   template <typename T>
   void executeLoadAll(las::LASFile<T> & lasFile) {
+    boost::posix_time::ptime start = boost::posix_time::second_clock::local_time();
+    fmt::print("Load All Starting [{}]\n", boost::posix_time::to_simple_string(start));
     fmt::print("Loading {} points\n", util::simplifyValue(static_cast<double>(lasFile.pointDataCount())));
     lasFile.loadData();
     fmt::print("Loaded {} points\n\n", util::simplifyValue(static_cast<double>(lasFile.pointData.size())));
+    boost::posix_time::ptime end = boost::posix_time::second_clock::local_time();
+    boost::posix_time::time_duration duration = end - start;
+    fmt::print("Load All Finished [{}]\n", boost::posix_time::to_simple_string(end));
+    fmt::print("Load All Duration [{}]\n\n", boost::posix_time::to_simple_string(duration));
+  }
+
+  template <typename T>
+  void executeSimplify(const las::LASFile<T> & lasFile, const double factor) {
+    boost::posix_time::ptime start = boost::posix_time::second_clock::local_time();
+    fmt::print("Simplify Starting [{}]\n", boost::posix_time::to_simple_string(start));
+    fmt::print("Parameters:\nNumber of points: {}\nPercentage to keep: {}%\n", lasFile.pointDataCount(), factor);
+    las::simplify(lasFile, factor);
+    boost::posix_time::ptime end = boost::posix_time::second_clock::local_time();
+    boost::posix_time::time_duration duration = end - start;
+    fmt::print("Simplify Starting Finished [{}]\n", boost::posix_time::to_simple_string(end));
+    fmt::print("Simplify Starting Duration [{}]\n\n", boost::posix_time::to_simple_string(duration));
   }
 
   template <typename T>
   void executeColorize(const las::LASFile<T> & lasFile) {
-    colorize(lasFile);
+    boost::posix_time::ptime start = boost::posix_time::second_clock::local_time();
+    fmt::print("Colorize Starting [{}]\n", boost::posix_time::to_simple_string(start));
+    las::colorize(lasFile);
+    boost::posix_time::ptime end = boost::posix_time::second_clock::local_time();
+    boost::posix_time::time_duration duration = end - start;
+    fmt::print("Colorize Finished [{}]\n", boost::posix_time::to_simple_string(end));
+    fmt::print("Colorize Duration [{}]\n\n", boost::posix_time::to_simple_string(duration));
   }
 
   template <typename T>
-  void executeCGALWLOP(const las::LASFile<T> & lasFile) {
+  void executeCGALWLOP(const las::LASFile<T> & lasFile,
+                       const double percentage,
+                       const double radius,
+                       const unsigned int iterations,
+                       const bool uniform) {
     boost::posix_time::ptime start = boost::posix_time::second_clock::local_time();
     fmt::print("CGAL WLOP Starting [{}]\n", boost::posix_time::to_simple_string(start));
-    wlopParallel(lasFile);
+    fmt::print("Parameters:\nNumber of points: {}\nPercentage to keep: {}%\nRadius: {}\nNumber of iterations: {}\nRequires uniform: {}\n\n", lasFile.pointDataCount(), percentage, radius, iterations, uniform);
+    las::wlopParallel(lasFile, percentage, radius, iterations, uniform);
     boost::posix_time::ptime end = boost::posix_time::second_clock::local_time();
     boost::posix_time::time_duration duration = end - start;
     fmt::print("CGAL WLOP Finished [{}]\n", boost::posix_time::to_simple_string(end));
     fmt::print("CGAL WLOP Duration [{}]\n\n", boost::posix_time::to_simple_string(duration));
+  }
+
+  template <typename T>
+  int mainExecuteBlock(las::LASFile<T> & lasFile) {
+    int returnValue = 0;
+
+    lasFile.loadHeaders();
+
+    executeLoadAll(lasFile);
+    //executeLoadChunks(lasFile);
+    executeSimplify(lasFile, 25);
+    executeColorize(lasFile);
+    executeCGALWLOP(lasFile, 1, -1, 1, false);
+    //returnValue = executeCL();  
+
+    return returnValue;
   }
 }
 
@@ -176,18 +221,38 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
-  las::LASFile<las::PointData<-1>> lasFile(argv[1]);
-  fmt::print("Loading LAS file:\n{}\n", argv[1]);
-  lasFile.loadHeaders();
+  fmt::print("Starting CLEST [{}]", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
 
-  if (!las::isLasValid(lasFile.publicHeader)) {
-    fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", lasFile.filePath);
+  las::LASFile<las::PointData<-1>> dummyLasFile(argv[1]);
+  fmt::print("Loading LAS file:\n{}\n", argv[1]);
+  dummyLasFile.loadHeaders();
+
+  if (!las::isLasValid(dummyLasFile.publicHeader)) {
+    fmt::print(stderr, "Expected a valid LAS file, but {} seems to be corrupted.\n", dummyLasFile.filePath);
     return 1;
   }
 
-  //executeLoadAll(lasFile);
-  //executeLoadChunks(lasFile);
-  //executeColorize(lasFile);
-  executeCGALWLOP(lasFile);
-  //return executeCL();  
+  int returnValue;
+
+  if (dummyLasFile.publicHeader.pointDataRecordFormat == 0) {
+    las::LASFile<las::PointData<0>> lasFile(argv[1]);
+    returnValue = mainExecuteBlock(lasFile);
+  } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 1) {
+    las::LASFile<las::PointData<1>> lasFile(argv[1]);
+    returnValue = mainExecuteBlock(lasFile);
+  } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 2) {
+    las::LASFile<las::PointData<2>> lasFile(argv[1]);
+    returnValue = mainExecuteBlock(lasFile);
+  } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 3) {
+    las::LASFile<las::PointData<3>> lasFile(argv[1]);
+    returnValue = mainExecuteBlock(lasFile);
+  } else {
+    fmt::print(stderr, "Expected a valid LAS file, but the LAS uses format {}, which is not valid.\n", dummyLasFile.publicHeader.pointDataRecordFormat);
+    return 1;
+  }
+
+  fmt::print("Finished CLEST [{}]", boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()));
+
+  return returnValue;
+
 }

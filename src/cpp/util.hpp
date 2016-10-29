@@ -75,7 +75,7 @@ namespace clest {
             for (auto device = platformDevices.begin();
                  device != platformDevices.end();
                  device++) {
-              name = device->getInfo < CL_DEVICE_NAME>();
+              name = device->getInfo <CL_DEVICE_NAME>();
               boost::trim(name);
               fmt::print(" {} {}\n", ((device + 1) != platformDevices.end() ? "├" : "└"), name);
             }
