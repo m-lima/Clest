@@ -47,7 +47,7 @@ namespace clest {
       return testValue.c[0] == 1;
     }
 
-    bool listALL() {
+    bool listAll() {
       fmt::print("Listing all platforms and devices..\n");
       try {
         std::vector<cl::Platform> platforms;

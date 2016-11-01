@@ -89,7 +89,8 @@ message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
 ##
 
 set(SOURCES
-  ${CPP_SRC_DIR}/main.cpp
+  # ${CPP_SRC_DIR}/main.cpp
+  ${CPP_SRC_DIR}/fractal.cpp
   ${CPP_SRC_DIR}/util.hpp
   ${CPP_SRC_DIR}/las/PublicHeader.hpp
   ${CPP_SRC_DIR}/las/RecordHeader.hpp

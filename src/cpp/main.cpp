@@ -11,9 +11,9 @@
 using namespace clest;
 
 namespace {
-  int executeCL() {
+  int _executeCL() {
     // Verbose all platforms and devices
-    if (!util::listALL()) {
+    if (!util::listAll()) {
       return 1;
     }
 
@@ -106,7 +106,7 @@ namespace {
   }
 
   template <typename T>
-  void executeLoadChunks(las::LASFile<T> & lasFile) {
+  void _executeLoadChunks(las::LASFile<T> & lasFile) {
     uint32_t minX = static_cast<uint32_t>(
       (lasFile.publicHeader.minX - lasFile.publicHeader.xOffset)
       / lasFile.publicHeader.xScaleFactor);
@@ -159,7 +159,7 @@ namespace {
   }
 
   template <typename T>
-  void executeLoadAll(las::LASFile<T> & lasFile) {
+  void _executeLoadAll(las::LASFile<T> & lasFile) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Load All Starting [{}]\n",
@@ -181,7 +181,7 @@ namespace {
   }
 
   template <typename T>
-  void executeSimplify(const las::LASFile<T> & lasFile, const double factor) {
+  void _executeSimplify(const las::LASFile<T> & lasFile, const double factor) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Simplify Starting [{}]\n",
@@ -200,7 +200,7 @@ namespace {
   }
 
   template <typename T>
-  void executeColorize(const las::LASFile<T> & lasFile) {
+  void _executeColorize(const las::LASFile<T> & lasFile) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Colorize Starting [{}]\n",
@@ -216,7 +216,7 @@ namespace {
   }
 
   template <typename T>
-  void executeCGALWLOP(const las::LASFile<T> & lasFile,
+  void _executeCGALWLOP(const las::LASFile<T> & lasFile,
                        const double percentage,
                        const double radius,
                        const unsigned int iterations,
@@ -247,17 +247,17 @@ namespace {
   }
 
   template <typename T>
-  int mainExecuteBlock(las::LASFile<T> & lasFile) {
+  int _mainExecuteBlock(las::LASFile<T> & lasFile) {
     int returnValue = 0;
 
     lasFile.loadHeaders();
 
-    executeLoadAll(lasFile);
-    //executeLoadChunks(lasFile);
-    //executeSimplify(lasFile, 25);
-    //executeColorize(lasFile);
-    //executeCGALWLOP(lasFile, 1, -1, 1, false);
-    //returnValue = executeCL();  
+    _executeLoadAll(lasFile);
+    //_executeLoadChunks(lasFile);
+    //_executeSimplify(lasFile, 25);
+    //_executeColorize(lasFile);
+    //_executeCGALWLOP(lasFile, 1, -1, 1, false);
+    //returnValue = _executeCL();  
 
     return returnValue;
   }
@@ -302,18 +302,21 @@ int main(int argc, char ** argv) {
 
   if (dummyLasFile.publicHeader.pointDataRecordFormat == 0) {
     las::LASFile<las::PointData<0>> lasFile(argv[1]);
-    returnValue = mainExecuteBlock(lasFile);
+    returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 1) {
     las::LASFile<las::PointData<1>> lasFile(argv[1]);
-    returnValue = mainExecuteBlock(lasFile);
+    returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 2) {
     las::LASFile<las::PointData<2>> lasFile(argv[1]);
-    returnValue = mainExecuteBlock(lasFile);
+    returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 3) {
     las::LASFile<las::PointData<3>> lasFile(argv[1]);
-    returnValue = mainExecuteBlock(lasFile);
+    returnValue = _mainExecuteBlock(lasFile);
   } else {
-    fmt::print(stderr, "Expected a valid LAS file, but the LAS uses format {}, which is not valid.\n", dummyLasFile.publicHeader.pointDataRecordFormat);
+    fmt::print(stderr,
+               "Expected a valid LAS file, but the LAS uses format {},"
+               "which is not valid.\n",
+               dummyLasFile.publicHeader.pointDataRecordFormat);
     return 1;
   }
 
