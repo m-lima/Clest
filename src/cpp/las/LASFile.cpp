@@ -43,7 +43,10 @@ namespace {
 
     // If `BUFFER_SIZE` cannot hold a single `T` element, throw 
     if (BUFFER_SIZE < typeSize) {
-      throw std::runtime_error(fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})", BUFFER_SIZE, typeSize));
+      throw std::runtime_error(
+        fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})",
+                    BUFFER_SIZE,
+                    typeSize));
     }
 
     // Clean up the container
@@ -110,13 +113,16 @@ namespace las {
   template <typename T>
   void LASFile<T>::loadHeaders() {
     // Cannot proceed if the file is not readable
-    std::ifstream fileStream(filePath, std::ifstream::in | std::ifstream::binary);
+    std::ifstream fileStream(filePath,
+                             std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
+      throw std::runtime_error(
+        fmt::format("Could not open file {}", filePath));
     }
 
     // Read directly into the variable
-    fileStream.read(reinterpret_cast<char*>(&publicHeader), sizeof(PublicHeader));
+    fileStream.read(reinterpret_cast<char*>(&publicHeader),
+                    sizeof(PublicHeader));
 
     // Cleanup, since not all headers have the same length
     _cleanupHeader(publicHeader);
@@ -134,7 +140,8 @@ namespace las {
 
         // Read the raw base size. Note that `sizeof()` cannot be used here
         // because of the variable length `std::vector` memory position
-        fileStream.read(reinterpret_cast<char*>(&header), RecordHeader::RAW_SIZE);
+        fileStream.read(reinterpret_cast<char*>(&header),
+                        RecordHeader::RAW_SIZE);
 
         // Establish how many bytes to read for this variable record
         uint16_t bytesToRead = header.recordLengthAfterHeader;
@@ -146,7 +153,8 @@ namespace las {
     }
 
     // Establish the actual point data count
-    // Depending on the version of the LAS, it could be stored in different variables
+    // Depending on the version of the LAS, it could be stored in different
+    // variables
     _pointDataCount = publicHeader.legacyNumberOfPointRecords > 0
       ? publicHeader.legacyNumberOfPointRecords
       : publicHeader.numberOfPointRecords;
@@ -163,9 +171,11 @@ namespace las {
   uint64_t LASFile<T>::loadData(const Limits<uint32_t> & limits) {
 
     // Check filename sanity
-    std::ifstream fileStream(filePath, std::ifstream::in | std::ifstream::binary);
+    std::ifstream fileStream(filePath,
+                             std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
+      throw std::runtime_error(
+        fmt::format("Could not open file {}", filePath));
     }
 
     // Go to the point where the point data starts
@@ -176,7 +186,8 @@ namespace las {
     // Load directly if `T` matches what's stored in file
     if (limits.isMaxed() && publicHeader.pointDataRecordFormat == T::FORMAT) {
         pointData.resize(_pointDataCount);
-        fileStream.read(reinterpret_cast<char*>(&pointData[0]), _pointDataCount * sizeof(T));
+        fileStream.read(reinterpret_cast<char*>(&pointData[0]),
+                        _pointDataCount * sizeof(T));
         pointData.shrink_to_fit();
         size = pointData.size();
     } else {
@@ -195,7 +206,8 @@ namespace las {
     return size;
   }
 
-  /// Returns the number of points in this LAS file as per the public header loading
+  /// Returns the number of points in this LAS file as per the public header
+  /// loading
   /// If called before loading the header, the behavior is undefined
   template <typename T>
   uint64_t LASFile<T>::pointDataCount() const {
@@ -203,12 +215,12 @@ namespace las {
   }
 
   /// Saves the LAS file into the file specified by `file`
-  /// The function is overloaded with the default parameter being the `filePath` const
-  /// std::string from construction
+  /// The function is overloaded with the default parameter being the
+  /// `filePath` const std::string from construction
   ///
   /// If the file already exists, it will append a ".new" before the extension
-  /// If the specified file exists and does not have a extension, an extension will be added
-  /// before attempting to add ".new"
+  /// If the specified file exists and does not have a extension, an extension
+  /// will be added before attempting to add ".new"
   template<typename T>
   void LASFile<T>::save(std::string file) const {
 
@@ -239,21 +251,28 @@ namespace las {
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
 
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}", filePath));
+      throw std::runtime_error(
+        fmt::format("Could not open file {}", filePath));
     }
 
     // Write the public header directly, based on `headerSize`
     // It is safe to const_cast because this will not alter the data
-    fileStream.write(reinterpret_cast<char*>(const_cast<PublicHeader*>(&publicHeader)), publicHeader.headerSize);
+    fileStream.write(
+      reinterpret_cast<char*>(const_cast<PublicHeader*>(&publicHeader)),
+      publicHeader.headerSize);
 
     // Iterate the veriable length records and write them directly
     for (auto & header : recordHeaders) {
-      fileStream.write(reinterpret_cast<char*>(const_cast<RecordHeader*>(&header)), RecordHeader::RAW_SIZE);
+      fileStream.write(
+        reinterpret_cast<char*>(const_cast<RecordHeader*>(&header)),
+        RecordHeader::RAW_SIZE);
       fileStream.write(header.data.data(), header.recordLengthAfterHeader);
     }
 
     // No buffering being done. The vector is written directly
-    fileStream.write(reinterpret_cast<const char*>(&pointData[0]), pointData.size() * sizeof(T));
+    fileStream.write(
+      reinterpret_cast<const char*>(&pointData[0]),
+      pointData.size() * sizeof(T));
 
     fileStream.close();
   }
