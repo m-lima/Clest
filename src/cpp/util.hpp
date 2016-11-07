@@ -133,6 +133,28 @@ namespace clest {
         }
       }
     }
+
+    void printLongDeviceInfo(const cl::Device & device) {
+      fmt::print(
+        "=========================|\n"
+        "Name:                     {}\n"
+        "OpenCL version:           {}\n"
+        "Global memory size:       {}MB\n"
+        "Local memory size:        {}KB\n"
+        "Max constant buffer size: {}KB\n"
+        "Max clock frequency:      {}Hz\n"
+        "Max compute units:        {}\n"
+        "Max work group size:      {}\n",
+        device.getInfo<CL_DEVICE_NAME>(),
+        device.getInfo<CL_DRIVER_VERSION>(),
+        device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(),
+        device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>(),
+        device.getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>(),
+        device.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(),
+        device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>(),
+        device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>()
+      );
+    }
   }
 }
 
