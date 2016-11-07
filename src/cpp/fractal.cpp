@@ -22,7 +22,7 @@ namespace {
 
 int main(int argc, char *argv[]) {
 
-  constexpr size_t VECTOR_SIZE = 0x100;
+  constexpr size_t VECTOR_SIZE = 0x20000000;
 
   if (argc > 3) {
     fmt::print(stderr,
@@ -52,16 +52,25 @@ int main(int argc, char *argv[]) {
   fmt::print("Using vector size: {}\n", VECTOR_SIZE);
   fmt::print("Using seed: {}\n", seed);
   fmt::print("Using iterations: {}\n", iterations);
-  uint8_t reference = seed & 0xFF;
+  uint8_t reference;
 
-  std::vector<uint8_t> data;
-  data.resize(VECTOR_SIZE);
+  std::vector<uint8_t> dataSerial;
+  dataSerial.resize(VECTOR_SIZE);
+
+  std::vector<uint8_t> dataParallel;
+  dataParallel.resize(VECTOR_SIZE);
+
+  std::vector<uint8_t> dataOCL;
+  dataOCL.resize(VECTOR_SIZE);
+
+  double avgSerial = 0;
+  double avgParallel = 0;
+  double avgOCL = 0;
 
   boost::posix_time::ptime start;
   boost::posix_time::time_duration duration;
 
   // Serial
-  double avgSerial = 0;
   fmt::print("Starting serial battery [{}]\n\n",
              boost::posix_time::to_simple_string(
                boost::posix_time::microsec_clock::local_time()
@@ -69,7 +78,8 @@ int main(int argc, char *argv[]) {
   );
   for (unsigned int i = 0; i < iterations; ++i) {
     start = boost::posix_time::microsec_clock::local_time();
-    _fractalSerial(data, reference);
+    reference = (seed + i) & 0xFF;
+    _fractalSerial(dataSerial, reference);
     duration = boost::posix_time::microsec_clock::local_time() - start;
     avgSerial += duration.total_microseconds();
     fmt::print(
@@ -89,11 +99,7 @@ int main(int argc, char *argv[]) {
              avgSerial
   );
 
-  std::vector<uint8_t> data2;
-  data2.resize(VECTOR_SIZE);
-
   // Parallel CPU
-  double avgParallel = 0;
   fmt::print("Starting parallel battery [{}]\n\n",
              boost::posix_time::to_simple_string(
                boost::posix_time::microsec_clock::local_time()
@@ -101,10 +107,11 @@ int main(int argc, char *argv[]) {
   );
   for (unsigned int i = 0; i < iterations; ++i) {
     start = boost::posix_time::microsec_clock::local_time();
-    tbb::blocked_range<size_t> block(0, data2.size());
+    reference = (seed + i) & 0xFF;
+    tbb::blocked_range<size_t> block(0, dataParallel.size());
     tbb::parallel_for(block, [&](tbb::blocked_range<size_t> range) {
       for (size_t j = range.begin(); j != range.end(); ++j) {
-        data2[j] = static_cast<uint8_t>(j & ((j & reference) << 3));
+        dataParallel[j] = static_cast<uint8_t>(j & ((j & reference) << 3));
       }
     });
     duration = boost::posix_time::microsec_clock::local_time() - start;
@@ -128,25 +135,22 @@ int main(int argc, char *argv[]) {
 
   fmt::print("Check results.. ");
   size_t errorCount = 0;
-  for (size_t i = 0; i < data.size(); i++) {
-    if (data[i] != data2[i]) {
+  for (size_t i = 0; i < dataSerial.size(); i++) {
+    if (dataSerial[i] != dataParallel[i]) {
       errorCount++;
     }
   }
-  fmt::print("{} errors out of {}\n", errorCount, data.size());
+  fmt::print("{} errors out of {}\n", errorCount, dataSerial.size());
   if (errorCount == 0) {
-    data2 = std::vector<uint8_t>();
+    dataParallel = std::vector<uint8_t>();
   }
 
   // Parallel GPU
-  double avgCL = 0;
   fmt::print("Starting OpenCL battery [{}]\n\n",
              boost::posix_time::to_simple_string(
                boost::posix_time::microsec_clock::local_time()
              )
   );
-
-  clest::util::listAll();
 
   try {
     std::vector<cl::Platform> platforms;
@@ -164,6 +168,7 @@ int main(int argc, char *argv[]) {
         platform.getDevices(CL_DEVICE_TYPE_GPU, &platformDevices);
         for (auto & device : platformDevices) {
           devices.push_back(device);
+          break;
         }
         if (!devices.empty()) {
           fmt::print("Going for: {}\n", platform.getInfo<CL_PLATFORM_NAME>());
@@ -180,11 +185,65 @@ int main(int argc, char *argv[]) {
     }
 
     cl::Context context(devices);
+    cl::Device device = devices[0];
+    cl::CommandQueue queue(context, device);
+
+    cl::Program program(
+      context,
+      clest::util::loadProgram("opencl/fractal.cl"),
+      true);
+
+    cl::make_kernel<cl::Buffer, unsigned char> kernel(program, "fractal");
+
+    cl::Buffer remoteData(context, CL_MEM_WRITE_ONLY, VECTOR_SIZE);
+
+    for (unsigned int i = 0; i < iterations; ++i) {
+      start = boost::posix_time::microsec_clock::local_time();
+      reference = (seed + i) & 0xFF;
+      kernel(
+        cl::EnqueueArgs(queue, cl::NDRange(VECTOR_SIZE)),
+        remoteData,
+        reference
+      );
+
+      queue.finish();
+
+      cl::copy(queue, remoteData, dataOCL.begin(), dataOCL.end());
+      duration = boost::posix_time::microsec_clock::local_time() - start;
+      avgParallel += duration.total_microseconds();
+      fmt::print(
+        "Finished iteration [{}/{}] [{}ms]\n",
+        i + 1,
+        iterations,
+        duration.total_microseconds() / 1000
+      );
+    }
+    avgParallel /= iterations * 1000.0;
+
+    fmt::print("Finished parallel battery [{}]\n"
+               "Average time: {:03.2f}ms\n\n",
+               boost::posix_time::to_simple_string(
+                 boost::posix_time::microsec_clock::local_time()
+               ),
+               avgParallel
+    );
+
+    fmt::print("Check results.. ");
+    size_t errorCount = 0;
+    for (size_t i = 0; i < dataSerial.size(); i++) {
+      if (dataSerial[i] != dataOCL[i]) {
+        errorCount++;
+      }
+    }
+    fmt::print("{} errors out of {}\n", errorCount, dataSerial.size());
+    if (errorCount == 0) {
+      dataOCL = std::vector<uint8_t>();
+    }
 
   } catch (const cl::Error & error) {
     fmt::print(stderr, "OpenCL error: {} ({})", error.what(), error.err());
     return 1;
   }
-  
+
   return 0;
 }
