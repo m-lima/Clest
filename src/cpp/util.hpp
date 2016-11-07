@@ -144,7 +144,8 @@ namespace clest {
         "Max constant buffer size: {}KB\n"
         "Max clock frequency:      {}Hz\n"
         "Max compute units:        {}\n"
-        "Max work group size:      {}\n",
+        "Max work group size:      {}\n"
+        "=========================|\n\n",
         device.getInfo<CL_DEVICE_NAME>(),
         device.getInfo<CL_DRIVER_VERSION>(),
         device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(),
