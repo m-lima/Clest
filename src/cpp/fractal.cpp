@@ -15,6 +15,7 @@ namespace {
   void _fractalSerial(std::vector<uint8_t> & data, uint8_t seed) {
     for (size_t i = 0; i < data.size(); ++i) {
       data[i] = static_cast<uint8_t>(i & ((i & seed) << 3));
+      data[i] = std::powl(data[i], seed);
     }
   }
 
@@ -112,6 +113,7 @@ int main(int argc, char *argv[]) {
     tbb::parallel_for(block, [&](tbb::blocked_range<size_t> range) {
       for (size_t j = range.begin(); j != range.end(); ++j) {
         dataParallel[j] = static_cast<uint8_t>(j & ((j & reference) << 3));
+        dataParallel[i] = std::powl(dataParallel[i], seed);
       }
     });
     duration = boost::posix_time::microsec_clock::local_time() - start;
@@ -152,6 +154,9 @@ int main(int argc, char *argv[]) {
              )
   );
 
+  std::unique_ptr<cl::Device> devicePtr = nullptr;
+  std::unique_ptr<cl::Program> programPtr = nullptr;
+
   try {
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
@@ -185,15 +190,17 @@ int main(int argc, char *argv[]) {
     }
 
     cl::Context context(devices);
-    cl::Device device = devices[0];
-    cl::CommandQueue queue(context, device);
+    devicePtr = std::make_unique<cl::Device>(devices[0]);
+    cl::CommandQueue queue(context, *devicePtr);
 
-    cl::Program program(
+    programPtr = std::make_unique<cl::Program>(
       context,
-      clest::util::loadProgram("opencl/fractal.cl"),
-      true);
+      clest::util::loadProgram("opencl/fractal.cl")
+      );
 
-    cl::make_kernel<cl::Buffer, unsigned char> kernel(program, "fractal");
+    programPtr->build(devices);
+
+    cl::make_kernel<cl::Buffer, unsigned char> kernel(*programPtr, "fractal");
 
     cl::Buffer remoteData(context, CL_MEM_WRITE_ONLY, VECTOR_SIZE);
 
@@ -218,6 +225,7 @@ int main(int argc, char *argv[]) {
         duration.total_microseconds() / 1000
       );
     }
+
     avgParallel /= iterations * 1000.0;
 
     fmt::print("Finished parallel battery [{}]\n"
@@ -241,7 +249,22 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (const cl::Error & error) {
-    fmt::print(stderr, "OpenCL error: {} ({})", error.what(), error.err());
+    fmt::print(stderr, "OpenCL error: {} ({})\n", error.what(), error.err());
+    switch (error.err()) {
+      case CL_INVALID_PROGRAM_EXECUTABLE:
+      case CL_BUILD_PROGRAM_FAILURE:
+      if (programPtr == nullptr) {
+        fmt::print(stderr, "Program pointer is NULL\n");
+      } else {
+        if (devicePtr == nullptr) {
+          fmt::print(stderr, "Device pointer is NULL\n");
+        }
+        fmt::print(stderr,
+                   "Build failure:\n{}\n",
+                   programPtr->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*devicePtr));
+      }
+      break;
+    }
     return 1;
   }
 
