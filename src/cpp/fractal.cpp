@@ -14,8 +14,12 @@ namespace {
 
   void _fractalSerial(std::vector<uint8_t> & data, uint8_t seed) {
     for (size_t i = 0; i < data.size(); ++i) {
-      data[i] = static_cast<uint8_t>(i & (i >> 8));
-      data[i] = static_cast<uint8_t>(std::pow(data[i], 2));
+      uint8_t base = static_cast<uint8_t>(i & (i >> 8));
+      uint8_t value = base;
+      for (uint8_t j = 0; j < seed; ++j) {
+        value *= base;
+      }
+      data[i] = value;
     }
   }
 
@@ -146,9 +150,15 @@ int main(int argc, char *argv[]) {
       tbb::blocked_range<size_t> block(0, dataParallel.size());
       tbb::parallel_for(block, [&](tbb::blocked_range<size_t> range) {
         for (size_t j = range.begin(); j != range.end(); ++j) {
-          dataParallel[j] = static_cast<uint8_t>(j & (j >> 8));
-          dataParallel[j] =
-            static_cast<uint8_t>(std::pow(dataParallel[j], 2));
+          //dataParallel[j] = static_cast<uint8_t>(j & (j >> 8));
+          //dataParallel[j] =
+          //  static_cast<uint8_t>(std::powl(dataParallel[j], 2));
+          uint8_t base = static_cast<uint8_t>(j & (j >> 8));
+          uint8_t value = base;
+          for (uint8_t k = 0; k < reference; ++k) {
+            value *= base;
+          }
+          dataParallel[j] = value;
         }
       });
       duration = boost::posix_time::microsec_clock::local_time() - start;
