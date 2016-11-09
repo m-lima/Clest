@@ -22,14 +22,14 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 if(WIN32)
 
   # Boost
-  set(BOOST_ROOT "${ENV_HOME_DIR}/Bin/Boost/boost_1_62_0")
+  set(BOOST_ROOT "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
 
   # CGAL
-  set(CGAL_DIR "${ENV_HOME_DIR}/Bin/CGAL-4.9/build/msvc")
+  set(CGAL_DIR "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build/msvc")
 
   # TBB
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
-  set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Bin/tbb2017_20160916oss")
+  set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Lib/TBB/tbb2017_20160916oss")
 
 else()
   # set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
