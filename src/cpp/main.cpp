@@ -8,6 +8,17 @@
 #include "las/LASFile.hpp"
 #include "las/Operations.hpp"
 
+#ifdef _WIN32
+// Force high performance GPU
+extern "C" {
+  // NVidia
+  __declspec(dllexport) DWORD NvOptimusEnablement = 1;
+
+  // AMD
+  __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 using namespace clest;
 
 namespace {
