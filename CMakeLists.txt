@@ -25,7 +25,7 @@ if(WIN32)
   set(BOOST_ROOT "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
 
   # CGAL
-  set(CGAL_DIR "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build/msvc")
+  set(CGAL_DIR "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
 
   # TBB
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
@@ -120,7 +120,7 @@ add_custom_command(
   OUTPUT copy_opencl_sources
   COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/opencl
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/${OPENCL_SRC_DIR} ${CMAKE_BINARY_DIR}/opencl
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/lib/bin ${CMAKE_BINARY_DIR}
+  # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/lib/bin ${CMAKE_BINARY_DIR}
   DEPENDS always_execute
   )
 add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
