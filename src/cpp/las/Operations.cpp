@@ -1,3 +1,4 @@
+#ifdef MODE_OPERATOR
 #include "Operations.hpp"
 
 #include <vector>
@@ -44,8 +45,8 @@ namespace {
   /// Checks to see if the file is a valid LAS file
   /// It considers the public header sanity check and the amount of points
   /// referenced by the header (must not be empty)
-  template <typename T>
-  void _validateLAS(const las::LASFile<T> & lasFile,
+  template <int N>
+  void _validateLAS(const las::LASFile<N> & lasFile,
                     const std::string & action) {
     if (!lasFile.isValid()) {
       throw std::runtime_error(fmt::format(
@@ -67,10 +68,10 @@ namespace {
   /// same is not true for file reading, since it would hinder performance
   ///
   /// The functor/lambda `F func` will be called for each element of the vector
-  /// Also, the functor/lambda should take a `T` as parameter and a
+  /// Also, the functor/lambda should take a `N` as parameter and a
   /// `uint64_t` current position pointer
-  template <typename T, typename F>
-  void _mainIterator(const las::LASFile<T> & file,
+  template <int N, typename F>
+  void _mainIterator(const las::LASFile<N> & file,
                      const F & func,
                      bool forceFromFile = false) {
 
@@ -81,12 +82,13 @@ namespace {
     if (forceFromFile || dataPointCount != file.pointData.size()) {
 
       // Prepare read buffer and memory pointer
-      // The buffer will read as many `T` as it can pack inside BUFFER_SIZE
+      // The buffer will read as many `PointData<N>` as it can pack
+      // inside BUFFER_SIZE
       constexpr uint16_t BUFFER_SIZE = 8192;
       uint16_t typeSize = file.publicHeader.pointDataRecordLength;
       uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
 
-      // If `BUFFER_SIZE` cannot hold a single `T` element, throw
+      // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw
       if (BUFFER_SIZE < typeSize) {
         throw std::runtime_error(
           fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})",
@@ -94,7 +96,7 @@ namespace {
       }
 
       uint64_t currentPoint = 0;
-      T *base;
+      las::PointData<N> *base;
       char data[BUFFER_SIZE];
 
       // Open file
@@ -115,12 +117,12 @@ namespace {
         // Read the buffer
         fileStream.read(data, blockSize);
 
-        // For each element `T`, map the memory and call `F func`
+        // For each element `PointData<N>`, map the memory and call `F func`
         // Add the return value to the output vector
         for (size_t i = 0;
              i < blockSize && currentPoint < dataPointCount;
              i += typeSize) {
-          base = reinterpret_cast<T*>(data + i);
+          base = reinterpret_cast<las::PointData<N>*>(data + i);
           func(*base, currentPoint);
           currentPoint++;
         }
@@ -147,7 +149,9 @@ namespace {
   /// and max values for x, y, and z.
   /// Could be parallelized, but performance gain is not significant
   template <typename T>
-  las::Limits<double> _getLimits(const std::vector<T> & container) {
+  las::Limits<double> _getLimits(
+    const std::vector<T> & container)
+  {
     las::Limits<double> limits;
 
     for (auto & point : container) {
@@ -179,7 +183,7 @@ namespace {
 
     // Helper variables
     const std::vector<Point3> * const _in;
-    las::LASFile<las::PointData<0>> * const _out;
+    las::LASFile<0> * const _out;
 
     const double xScale;
     const double yScale;
@@ -191,7 +195,7 @@ namespace {
 
     // Constructor to set `const` values
     _PointConverter(const std::vector<Point3> & in,
-                    las::LASFile<las::PointData<0>> & out) :
+                    las::LASFile<0> & out) :
       _in(&in), _out(&out),
       xScale(out.publicHeader.xScaleFactor),
       yScale(out.publicHeader.yScaleFactor),
@@ -223,11 +227,11 @@ namespace las {
   ///
   /// The resulting LAS file will carry a `PointData<2>` format, the
   /// minimum necessary for a RGB point cloud
-  template <typename T>
-  void colorize(const LASFile<T> & lasFile) {
+  template <int N>
+  void colorize(const LASFile<N> & lasFile) {
     _validateLAS(lasFile, "colorize LAS file");
 
-    LASFile<PointData<2>> newFile(_generateName(lasFile.filePath, "color"));
+    LASFile<2> newFile(_generateName(lasFile.filePath, "color"));
 
     // Copy the headers and change the pertinent values
     newFile.publicHeader = lasFile.publicHeader;
@@ -240,11 +244,11 @@ namespace las {
     auto dataPointCount = lasFile.pointDataCount();
     newFile.pointData.resize(dataPointCount);
 
-    _mainIterator(lasFile, [&](T point, auto index) {
+    _mainIterator(lasFile, [&](las::PointData<N> point, auto index) {
 
       // This is safe because `PointData<2>` first address that is not
       // part of the base `PointData` is the RED `uint16_t`
-      // Also, `LASFile<T>` is restricted to `PointData<T>`
+      // Also, `LASFile<N>` is restricted to `PointData<N>`
       PointData<2> newPoint = *reinterpret_cast<PointData<2>*>(&point);
 
       //// The coordinates will be the same; do an explicit memory copy
@@ -272,12 +276,12 @@ namespace las {
   /// until the desired amount of points is reached
   ///
   /// It accomplishes this by shuffling the indices of the point
-  /// data and picking the first N values, where
-  /// N = |pointCloud| * factor / 100
+  /// data and picking the first K values, where
+  /// K = |pointCloud| * factor / 100
   ///
   /// `factor` should be (0 100]%
-  template<typename T>
-  void simplify(const LASFile<T>& lasFile, const double factor) {
+  template<int N>
+  void simplify(const LASFile<N>& lasFile, const double factor) {
 
     // Factor should be greater than 0 and less or equal to 100
     // factor = (0 100]
@@ -287,7 +291,7 @@ namespace las {
     _validateLAS(lasFile, "simplify LAS");
 
     // Create a new file
-    LASFile<T> newFile(_generateName(lasFile.filePath, "simple"));
+    LASFile<N> newFile(_generateName(lasFile.filePath, "simple"));
 
     // Calculate the new size
     uint64_t newSize = static_cast<uint64_t>(
@@ -301,7 +305,7 @@ namespace las {
     }
     std::random_shuffle(indices.begin(), indices.end());
 
-    // Pick the first N indices
+    // Pick the first K indices
     indices.resize(newSize);
     newFile.pointData.reserve(newSize);
 
@@ -321,8 +325,8 @@ namespace las {
       size_t currentIndex = 0;
 
       // Since the index vector is sorted, use an incrementing pointer
-      // to decide wheter to add
-      _mainIterator(lasFile, [&](T point, auto index) {
+      // to decide whether to add
+      _mainIterator(lasFile, [&](las::PointData<N> point, auto index) {
         if (currentIndex != newSize && index == indices[currentIndex]) {
           newFile.pointData.push_back(point);
           currentIndex++;
@@ -349,8 +353,8 @@ namespace las {
 
   /// Performs a weighted locally optimal projection of the
   /// point cloud by using CGAL's wlop
-  template <typename T>
-  void wlopParallel(const LASFile<T> & lasFile,
+  template <int N>
+  void wlopParallel(const LASFile<N> & lasFile,
                     const double percentage,
                     const double radius,
                     const unsigned int iterations,
@@ -366,13 +370,13 @@ namespace las {
     auto yOffset = lasFile.publicHeader.yOffset;
     auto zOffset = lasFile.publicHeader.zOffset;
 
-    // Convert the points from `T` to `Point3`
+    // Convert the points from `PointData<N>` to `Point3`
     std::vector<Point3> points;
     points.reserve(lasFile.pointDataCount());
-    _mainIterator(lasFile, [&](T point, auto currentPoint) {
-      points.push_back(Point3(point.x * xScale + xOffset,
-                              point.y * yScale + yOffset,
-                              point.z * zScale + zOffset));
+    _mainIterator(lasFile, [&](las::PointData<N> point, auto currentPoint) {
+      points.emplace_back(point.x * xScale + xOffset,
+                          point.y * yScale + yOffset,
+                          point.z * zScale + zOffset);
     });
     std::vector<Point3> output;
 
@@ -394,7 +398,7 @@ namespace las {
     Limits<double> limits = _getLimits(output);
 
     // Copy the headers and change the pertinent values
-    LASFile<PointData<0>> newFile(_generateName(lasFile.filePath, "wlop"));
+    LASFile<0> newFile(_generateName(lasFile.filePath, "wlop"));
     newFile.publicHeader = lasFile.publicHeader;
     newFile.publicHeader.pointDataRecordFormat = 0;
     newFile.publicHeader.pointDataRecordLength = sizeof(PointData<0>);
@@ -423,48 +427,21 @@ namespace las {
     newFile.save();
   }
 
-  template void simplify(const LASFile<PointData<-1>> & lasFile,
-                         const double factor);
-  template void colorize(const LASFile<PointData<-1>> & lasFile);
-  template void wlopParallel(const LASFile<PointData<-1>> & lasFile,
-                             const double percentage,
-                             const double radius,
-                             const unsigned int iterations,
+#define __DECLARE_TEMPLATES(index)\
+  template void simplify(const LASFile<index> & lasFile, const double factor);\
+  template void colorize(const LASFile<index> & lasFile);\
+  template void wlopParallel(const LASFile<index> & lasFile,\
+                             const double percentage,\
+                             const double radius,\
+                             const unsigned int iterations,\
                              const bool uniform);
 
-  template void simplify(const LASFile<PointData<0>> & lasFile,
-                         const double factor);
-  template void colorize(const LASFile<PointData<0>> & lasFile);
-  template void wlopParallel(const LASFile<PointData<0>> & lasFile,
-                             const double percentage,
-                             const double radius,
-                             const unsigned int iterations,
-                             const bool uniform);
+  __DECLARE_TEMPLATES(-1)
+  __DECLARE_TEMPLATES(0)
+  __DECLARE_TEMPLATES(1)
+  __DECLARE_TEMPLATES(2)
+  __DECLARE_TEMPLATES(3)
+#undef __DECLARE_TEMPLATES
 
-  template void simplify(const LASFile<PointData<1>> & lasFile,
-                         const double factor);
-  template void colorize(const LASFile<PointData<1>> & lasFile);
-  template void wlopParallel(const LASFile<PointData<1>> & lasFile,
-                             const double percentage,
-                             const double radius,
-                             const unsigned int iterations,
-                             const bool uniform);
-
-  template void simplify(const LASFile<PointData<2>> & lasFile,
-                         const double factor);
-  template void colorize(const LASFile<PointData<2>> & lasFile);
-  template void wlopParallel(const LASFile<PointData<2>> & lasFile,
-                             const double percentage,
-                             const double radius,
-                             const unsigned int iterations,
-                             const bool uniform);
-
-  template void simplify(const LASFile<PointData<3>> & lasFile,
-                         const double factor);
-  template void colorize(const LASFile<PointData<3>> & lasFile);
-  template void wlopParallel(const LASFile<PointData<3>> & lasFile,
-                             const double percentage,
-                             const double radius,
-                             const unsigned int iterations,
-                             const bool uniform);
 }
+#endif

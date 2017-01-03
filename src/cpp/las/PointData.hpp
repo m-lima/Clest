@@ -1,5 +1,4 @@
-#ifndef LAS_POINT_DATA_HPP
-#define LAS_POINT_DATA_HPP
+#pragma once
 
 #include <limits>
 
@@ -47,6 +46,28 @@ namespace las {
     }
   };
 
+#define _PART_XYZ uint32_t x;\
+                  uint32_t y;\
+                  uint32_t z
+
+#define _PART_BASIC uint16_t intensity;\
+                    CombinedValues combinedValues;\
+                    uint8_t classification;\
+                    int8_t scanAngleRank;\
+                    uint8_t userData;\
+                    uint16_t pointSourceID
+
+#define _PART_RGB uint16_t red;\
+                  uint16_t green;\
+                  uint16_t blue
+
+#define _PART_WAVE uint8_t wavePacketDescriptorIndex;\
+                   uint64_t byteOffsetToWaveformLocation;\
+                   float returnPointWaveformLocation;\
+                   float xT;\
+                   float yT;\
+                   float zT
+
 #pragma pack(push, 1)
   struct CombinedValues {
     uint8_t data;
@@ -74,120 +95,63 @@ namespace las {
   template<>
   struct PointData<-1> {
     static constexpr int FORMAT = -1;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
+    _PART_XYZ;
   };
 
   template <>
   struct PointData<0> {
     static constexpr int FORMAT = 0;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
+    _PART_XYZ;
+    _PART_BASIC;
   };
 
   template <>
   struct PointData<1> {
     static constexpr int FORMAT = 1;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
+    _PART_XYZ;
+    _PART_BASIC;
     double GPStime;
   };
 
   template <>
   struct PointData<2> {
     static constexpr int FORMAT = 2;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
-    uint16_t red;
-    uint16_t green;
-    uint16_t blue;
+    _PART_XYZ;
+    _PART_BASIC;
+    _PART_RGB;
   };
 
   template <>
   struct PointData<3> {
     static constexpr int FORMAT = 3;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
+    _PART_XYZ;
+    _PART_BASIC;
     double GPStime;
-    uint16_t red;
-    uint16_t green;
-    uint16_t blue;
+    _PART_RGB;
   };
 
   template <>
   struct PointData<4> {
     static constexpr int FORMAT = 4;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
+    _PART_XYZ;
+    _PART_BASIC;
     double GPStime;
-    uint8_t wavePacketDescriptorIndex;
-    uint64_t byteOffsetToWaveformLocation;
-    float returnPointWaveformLocation;
-    float xT;
-    float yT;
-    float zT;
+    _PART_WAVE;
   };
 
   template <>
   struct PointData<5> {
     static constexpr int FORMAT = 5;
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-    uint16_t intensity;
-    CombinedValues combinedValues;
-    uint8_t classification;
-    int8_t scanAngleRank;
-    uint8_t userData;
-    uint16_t pointSourceID;
+    _PART_XYZ;
+    _PART_BASIC;
     double GPStime;
-    uint16_t red;
-    uint16_t green;
-    uint16_t blue;
-    uint8_t wavePacketDescriptorIndex;
-    uint64_t byteOffsetToWaveformLocation;
-    float returnPointWaveformLocation;
-    float xT;
-    float yT;
-    float zT;
+    _PART_RGB;
+    _PART_WAVE;
   };
 #pragma pack(pop)
-}
 
-#endif	// LAS_POINT_DATA_HPP
+#undef _PART_XYZ
+#undef _PART_BASIC
+#undef _PART_RGB
+#undef _PART_WAVE
+}

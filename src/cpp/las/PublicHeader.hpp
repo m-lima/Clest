@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LAS_PUBLIC_HEADER_HPP
-#define LAS_PUBLIC_HEADER_HPP
 
 #include <array>
 #include <fstream>
@@ -50,6 +48,3 @@ namespace las {
   };
 }
 #pragma pack(pop)
-
-#endif	// LAS_PUBLIC_HEADER_HPP
-

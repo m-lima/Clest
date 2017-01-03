@@ -1,6 +1,4 @@
 #pragma once
-#ifndef LAS_RECORD_HEADER_HPP
-#define LAS_RECORD_HEADER_HPP
 
 #include <array>
 #include <fstream>
@@ -21,5 +19,3 @@ namespace las {
   };
 }
 #pragma pack(pop)
-
-#endif	// LAS_RECORD_HEADER_HPP

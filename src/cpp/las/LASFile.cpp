@@ -31,17 +31,17 @@ namespace {
   ///
   /// The chunk can be defined as coordinates or as a cap by
   /// using `max`. Note that there is no `min`
-  template <typename T>
+  template <int N>
   uint64_t _loadData(
     uint16_t typeSize,
     std::ifstream & in,
-    std::vector<T> & container,
+    std::vector<las::PointData<N>> & container,
     uint64_t max,
     const las::Limits<uint32_t> & limits
   ) {
     constexpr uint16_t BUFFER_SIZE = 8192;
 
-    // If `BUFFER_SIZE` cannot hold a single `T` element, throw 
+    // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw 
     if (BUFFER_SIZE < typeSize) {
       throw std::runtime_error(
         fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})",
@@ -51,13 +51,13 @@ namespace {
 
     // Clean up the container
     // Even if loading chunks, the memory is supposed to be capped
-    container = std::vector<T>();
+    container = std::vector<las::PointData<N>>();
     container.reserve(max);
 
     // Prepare for reading
     uint64_t count = 0;
     uint64_t iCount = 0;
-    T *base;
+    las::PointData<N> *base;
     uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
     char data[BUFFER_SIZE];
 
@@ -70,9 +70,9 @@ namespace {
         // Load bytes into memory
         in.read(data, blockSize);
 
-        // Iterate the buffer in `sizeof(T)` steps
+        // Iterate the buffer in `sizeof(PointData<N>)` steps
         for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
-          base = reinterpret_cast<T*>(data + i);
+          base = reinterpret_cast<las::PointData<N>*>(data + i);
           count++;
           container.push_back(*base);
           iCount++;
@@ -84,9 +84,9 @@ namespace {
         // Load bytes into memory
         in.read(data, blockSize);
 
-        // Iterate the buffer in `sizeof(T)` steps
+        // Iterate the buffer in `sizeof(PointData<N>)` steps
         for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
-          base = reinterpret_cast<T*>(data + i);
+          base = reinterpret_cast<las::PointData<N>*>(data + i);
           count++;
 
           // Only insert if it is within limits
@@ -105,13 +105,13 @@ namespace {
 namespace las {
 
   /// Trivial constructor
-  template <typename T>
-  LASFile<T>::LASFile(const std::string & file)
+  template <int N>
+  LASFile<N>::LASFile(const std::string & file)
     : filePath(std::move(file)) {}
 
   /// Loads the public and variable length record from file
-  template <typename T>
-  void LASFile<T>::loadHeaders() {
+  template <int N>
+  void LASFile<N>::loadHeaders() {
     // Cannot proceed if the file is not readable
     std::ifstream fileStream(filePath,
                              std::ifstream::in | std::ifstream::binary);
@@ -167,8 +167,8 @@ namespace las {
   ///
   /// If `T` is the same as the LAS file point data, a direct load
   /// will be performed if `limits.isMaxed()`
-  template <typename T>
-  uint64_t LASFile<T>::loadData(const Limits<uint32_t> & limits) {
+  template <int N>
+  uint64_t LASFile<N>::loadData(const Limits<uint32_t> & limits) {
 
     // Check filename sanity
     std::ifstream fileStream(filePath,
@@ -183,11 +183,12 @@ namespace las {
     
     uint64_t size;
 
-    // Load directly if `T` matches what's stored in file
-    if (limits.isMaxed() && publicHeader.pointDataRecordFormat == T::FORMAT) {
+    // Load directly if `PointData<N>` matches what's stored in file
+    if (limits.isMaxed()
+        && publicHeader.pointDataRecordFormat == las::PointData<N>::FORMAT) {
         pointData.resize(_pointDataCount);
         fileStream.read(reinterpret_cast<char*>(&pointData[0]),
-                        _pointDataCount * sizeof(T));
+                        _pointDataCount * sizeof(las::PointData<N>));
         pointData.shrink_to_fit();
         size = pointData.size();
     } else {
@@ -209,8 +210,8 @@ namespace las {
   /// Returns the number of points in this LAS file as per the public header
   /// loading
   /// If called before loading the header, the behavior is undefined
-  template <typename T>
-  uint64_t LASFile<T>::pointDataCount() const {
+  template <int N>
+  uint64_t LASFile<N>::pointDataCount() const {
     return _pointDataCount;
   }
 
@@ -221,38 +222,48 @@ namespace las {
   /// If the file already exists, it will append a ".new" before the extension
   /// If the specified file exists and does not have a extension, an extension
   /// will be added before attempting to add ".new"
-  template<typename T>
-  void LASFile<T>::save(std::string file) const {
+  template<int N>
+  void LASFile<N>::save(std::string file) const {
 
     // Check if the file exists
     // Keep appending ".new" before the extension until the filename is unique
-    do {
+    {
+      int counter = 0;
+      do {
 
-      // Try to read it
-      std::ifstream testFile(file, std::ifstream::in);
+        // Try to read it
+        std::ifstream testFile(file, std::ifstream::in);
 
-      // If it's not readable, it doesn't exits; Quit loop
-      if (!testFile.is_open()) {
-        break;
+        // If it's not readable, it doesn't exits; Quit loop
+        if (!testFile.is_open()) {
+          break;
+        }
+
+        testFile.close();
+
+        // Find the extension
+        auto index = file.rfind(".las");
+
+        // If it has no extension, first try adding an extension to it
+        if (index == std::string::npos) { file += ".las"; }
+        // If it does, append ".new" before the extension
+        else { file = file.substr(0, index) + ".new.las"; }
+
+        counter++;
+      } while (counter < 20);
+
+      if (counter == 20) {
+        throw std::runtime_error(
+          "Could not write to file. Too many copies exist");
       }
-
-      testFile.close();
-
-      // Find the extension
-      auto index = file.rfind(".las");
-
-      // If it has no extension, first try adding an extension to it
-      if (index == std::string::npos) { file += ".las"; }
-      // If it does, append ".new" before the extension
-      else { file = file.substr(0, index) + ".new.las"; }
-    } while (true);
+    }
 
     // Prepare for writing
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
 
     if (!fileStream.is_open()) {
       throw std::runtime_error(
-        fmt::format("Could not open file {}", filePath));
+        fmt::format("Could not open file {}", file));
     }
 
     // Write the public header directly, based on `headerSize`
@@ -272,15 +283,15 @@ namespace las {
     // No buffering being done. The vector is written directly
     fileStream.write(
       reinterpret_cast<const char*>(&pointData[0]),
-      pointData.size() * sizeof(T));
+      pointData.size() * sizeof(las::PointData<N>));
 
     fileStream.close();
   }
 
   /// Checks the health of the public header by checking the signature
   /// and the length of the header
-  template <typename T>
-  bool LASFile<T>::isValid() const {
+  template <int N>
+  bool LASFile<N>::isValid() const {
 
     // Should start with LASF
     char reference[] = "LASF";
@@ -298,10 +309,14 @@ namespace las {
     return true;
   }
 
-  template class LASFile<PointData<-1>>;
-  template class LASFile<PointData<0>>;
-  template class LASFile<PointData<1>>;
-  template class LASFile<PointData<2>>;
-  template class LASFile<PointData<3>>;
+#define __DECLARE_TEMPLATES(index)\
+  template class LASFile<index>;
+
+  __DECLARE_TEMPLATES(-1)
+  __DECLARE_TEMPLATES(0)
+  __DECLARE_TEMPLATES(1)
+  __DECLARE_TEMPLATES(2)
+  __DECLARE_TEMPLATES(3)
+#undef __DECLARE_TEMPLATES
 
 }

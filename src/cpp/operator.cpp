@@ -1,3 +1,5 @@
+#ifdef MODE_OPERATOR
+
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
@@ -338,3 +340,5 @@ int main(int argc, char ** argv) {
   return returnValue;
 
 }
+
+#endif

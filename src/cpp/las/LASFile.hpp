@@ -1,5 +1,4 @@
-#ifndef LAS_LAS_FILE_HPP
-#define LAS_LAS_FILE_HPP
+#pragma once
 
 #include <vector>
 #include "PublicHeader.hpp"
@@ -7,14 +6,15 @@
 #include "PointData.hpp"
 
 namespace las {
-  template <typename T>
+
+  template <int N>
   class LASFile {
   public:
     LASFile(const std::string & file);
 
     PublicHeader publicHeader;
     std::vector<RecordHeader> recordHeaders;
-    std::vector<T> pointData;
+    std::vector<PointData<N>> pointData;
 
     const std::string filePath;
 
@@ -31,4 +31,3 @@ namespace las {
     uint64_t _pointDataCount;
   };
 }
-#endif	// LAS_LAS_FILE_HPP

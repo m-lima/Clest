@@ -89,12 +89,15 @@ message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
 ##
 
 set(SOURCES
-  # ${CPP_SRC_DIR}/main.cpp
+  ${CPP_SRC_DIR}/operator.cpp
+  ${CPP_SRC_DIR}/grider.cpp
   ${CPP_SRC_DIR}/fractal.cpp
   ${CPP_SRC_DIR}/util.hpp
   ${CPP_SRC_DIR}/las/PublicHeader.hpp
   ${CPP_SRC_DIR}/las/RecordHeader.hpp
   ${CPP_SRC_DIR}/las/PointData.hpp
+  ${CPP_SRC_DIR}/las/GridFile.hpp
+  ${CPP_SRC_DIR}/las/GridFile.cpp
   ${CPP_SRC_DIR}/las/LASFile.hpp
   ${CPP_SRC_DIR}/las/LASFile.cpp
   ${CPP_SRC_DIR}/las/Operations.hpp
@@ -135,6 +138,7 @@ target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 add_dependencies(clest always)
+add_definitions(-DMODE_GRIDER)
 
 ##------------------------------------------------------------------------------
 ## MSVC Specifics

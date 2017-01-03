@@ -1,5 +1,4 @@
-#ifndef CLEST_UTIL_HPP
-#define CLEST_UTIL_HPP
+#pragma once
 
 #include <string>
 #include <fstream>
@@ -158,5 +157,3 @@ namespace clest {
     }
   }
 }
-
-#endif //CLEST_UTIL_HPP

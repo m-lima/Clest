@@ -1,22 +1,20 @@
-#ifndef LAS_OPERATIONS_HPP
-#define LAS_OPERATIONS_HPP
+#pragma once
 
 #include "LASFile.hpp"
 
 namespace las {
-  template <typename T>
-  void colorize(const LASFile<T> & lasFile);
+  template <int N>
+  void colorize(const LASFile<N> & lasFile);
 
-  template <typename T>
-  void simplify(const LASFile<T> & lasFile, const double factor);
+  template <int N>
+  void simplify(const LASFile<N> & lasFile, const double factor);
 
 #ifdef CGAL_LINKED_WITH_TBB
-  template <typename T>
-  void wlopParallel(const LASFile<T> & lasFile,
+  template <int N>
+  void wlopParallel(const LASFile<N> & lasFile,
                     const double percentage,
                     const double radius,
                     const unsigned int iterations,
                     const bool uniform);
 #endif
 }
-#endif // LAS_OPERATIONS_HPP
