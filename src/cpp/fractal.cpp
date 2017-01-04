@@ -1,15 +1,13 @@
-#ifdef MODE_FRACTAL
-
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
+
+#include <vector>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
-#include <vector>
-
-#include "util.hpp"
+#include <clest/cl.hpp>
 
 namespace {
 
@@ -41,7 +39,7 @@ int main(int argc, char *argv[]) {
     cl::Platform::get(&platforms);
 
     if (platforms.empty()) {
-      fmt::print(stderr, "OpenCL platforms not found\n");
+      clest::println(stderr, "OpenCL platforms not found");
       return 1;
     }
 
@@ -50,7 +48,7 @@ int main(int argc, char *argv[]) {
       try {
         platform.getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
         for (auto & device : platformDevices) {
-          clest::util::printLongDeviceInfo(device);
+          clest::printLongDeviceInfo(device);
         }
       } catch (...) {
       }
@@ -58,9 +56,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc > 3) {
-    fmt::print(stderr,
-               "Illegal number of parameters.\n"
-               "Usage: clest [seed] [iterations]\n"
+    clest::println(stderr,
+                   "Illegal number of parameters.\n"
+                   "Usage: clest [seed] [iterations]"
     );
     return 1;
   }
@@ -71,21 +69,21 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     std::istringstream iss(argv[1]);
     if (!(iss >> seed)) {
-      fmt::print(stderr, "Invalid seed value: {}\n", argv[1]);
+      clest::println(stderr, "Invalid seed value: {}", argv[1]);
     }
 
     if (argc > 2) {
       iss = std::istringstream(argv[2]);
       if (!(iss >> iterations)) {
-        fmt::print(stderr, "Invalid iteration number: {}\n", argv[2]);
+        clest::println(stderr, "Invalid iteration number: {}", argv[2]);
       }
     }
   }
 
-  fmt::print(stderr, "Using vector size: {}\n", VECTOR_SIZE);
-  fmt::print(stderr, "Using seed: {}\n", seed);
-  fmt::print(stderr, "Using iterations: {}\n", iterations);
-  fmt::print("Using {} iterations\n", iterations);
+  clest::println(stderr, "Using vector size: {}", VECTOR_SIZE);
+  clest::println(stderr, "Using seed: {}", seed);
+  clest::println(stderr, "Using iterations: {}", iterations);
+  clest::println("Using {} iterations", iterations);
   uint8_t reference = seed & 0xFF;
 
   double avgSerial;
@@ -105,15 +103,15 @@ int main(int argc, char *argv[]) {
       avgParallel = 0;
       avgOCL = 0;
 
-      fmt::print(stderr, "======================== SIZE: ({})\n\n", size);
+      clest::println(stderr, "======================== SIZE: ({})\n", size);
       dataSerial.resize(size);
       dataParallel.resize(size);
       dataOCL.resize(size);
 
       // Serial
-      fmt::print(
+      clest::println(
         stderr,
-        "Starting serial battery [{}]\n",
+        "Starting serial battery [{}]",
         boost::posix_time::to_simple_string(
           boost::posix_time::microsec_clock::local_time()
         )
@@ -127,9 +125,9 @@ int main(int argc, char *argv[]) {
         }
         duration = boost::posix_time::microsec_clock::local_time() - start;
         avgSerial += duration.total_microseconds();
-        fmt::print(
+        clest::println(
           stderr,
-          "Finished iteration [{}/{}] [{}ms]\n",
+          "Finished iteration [{}/{}] [{}ms]",
           i + 1,
           iterations,
           duration.total_microseconds() / 1000
@@ -137,10 +135,10 @@ int main(int argc, char *argv[]) {
       }
       avgSerial /= iterations * 1000.0;
 
-      fmt::print(
+      clest::println(
         stderr,
-        "Finished serial battery [{}]\n"
-        "Average time: {:03.2f}ms\n\n",
+        "Finished serial battery [{}]"
+        "Average time: {:03.2f}ms\n",
         boost::posix_time::to_simple_string(
           boost::posix_time::microsec_clock::local_time()
         ),
@@ -148,9 +146,9 @@ int main(int argc, char *argv[]) {
       );
 
       // Parallel CPU
-      fmt::print(
+      clest::println(
         stderr,
-        "Starting parallel battery [{}]\n",
+        "Starting parallel battery [{}]",
         boost::posix_time::to_simple_string(
           boost::posix_time::microsec_clock::local_time()
         )
@@ -178,9 +176,9 @@ int main(int argc, char *argv[]) {
         }
         duration = boost::posix_time::microsec_clock::local_time() - start;
         avgParallel += duration.total_microseconds();
-        fmt::print(
+        clest::println(
           stderr,
-          "Finished iteration [{}/{}] [{}ms]\n",
+          "Finished iteration [{}/{}] [{}ms]",
           i + 1,
           iterations,
           duration.total_microseconds() / 1000
@@ -188,17 +186,17 @@ int main(int argc, char *argv[]) {
       }
       avgParallel /= iterations * 1000.0;
 
-      fmt::print(
+      clest::println(
         stderr,
         "Finished parallel battery [{}]\n"
-        "Average time: {:03.2f}ms\n",
+        "Average time: {:03.2f}ms",
         boost::posix_time::to_simple_string(
           boost::posix_time::microsec_clock::local_time()
         ),
         avgParallel
       );
 
-      fmt::print(stderr, "Check results.. ");
+      clest::println(stderr, "Check results.. ");
       size_t errorCount = 0;
       for (size_t i = 0; i < dataSerial.size(); i++) {
         if (dataSerial[i] != dataParallel[i]) {
@@ -206,21 +204,21 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      fmt::print(
+      clest::println(
         stderr,
-        "{} errors out of {}\n\n",
+        "{} errors out of {}\n",
         errorCount, dataSerial.size()
       );
       if (errorCount > 0) {
-        fmt::print(stderr, "**** FAILED ****\n\n");
+        clest::println(stderr, "**** FAILED ****\n");
         avgParallel = -1;
       }
       dataParallel = std::vector<uint8_t>();
 
       // Parallel GPU
-      fmt::print(
+      clest::println(
         stderr,
-        "Starting OpenCL battery [{}]\n",
+        "Starting OpenCL battery [{}]",
         boost::posix_time::to_simple_string(
           boost::posix_time::microsec_clock::local_time()
         )
@@ -234,7 +232,7 @@ int main(int argc, char *argv[]) {
         cl::Platform::get(&platforms);
 
         if (platforms.empty()) {
-          fmt::print(stderr, "OpenCL platforms not found\n");
+          clest::println(stderr, "OpenCL platforms not found");
           return 1;
         }
 
@@ -256,7 +254,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (devices.empty()) {
-          fmt::print(stderr, "No devices found\n");
+          clest::println(stderr, "No devices found");
           return 1;
         }
 
@@ -266,7 +264,7 @@ int main(int argc, char *argv[]) {
 
         programPtr = std::make_unique<cl::Program>(
           context,
-          clest::util::loadProgram("opencl/fractal.cl")
+          clest::loadProgram("opencl/fractal.cl")
           );
 
         programPtr->build(devices);
@@ -288,9 +286,9 @@ int main(int argc, char *argv[]) {
             cl::copy(queue, remoteData, dataOCL.begin(), dataOCL.end());
             duration = boost::posix_time::microsec_clock::local_time() - start;
             avgOCL += duration.total_microseconds();
-            fmt::print(
+            clest::println(
               stderr,
-              "Finished iteration [{}/{}] [{}ms]\n",
+              "Finished iteration [{}/{}] [{}ms]",
               i + 1,
               iterations,
               duration.total_microseconds() / 1000
@@ -313,9 +311,9 @@ int main(int argc, char *argv[]) {
             cl::copy(queue, remoteData, dataOCL.begin(), dataOCL.end());
             duration = boost::posix_time::microsec_clock::local_time() - start;
             avgOCL += duration.total_microseconds();
-            fmt::print(
+            clest::println(
               stderr,
-              "Finished iteration [{}/{}] [{}ms]\n",
+              "Finished iteration [{}/{}] [{}ms]",
               i + 1,
               iterations,
               duration.total_microseconds() / 1000
@@ -325,17 +323,17 @@ int main(int argc, char *argv[]) {
 
         avgOCL /= iterations * 1000.0;
 
-        fmt::print(
+        clest::println(
           stderr,
           "Finished parallel battery [{}]\n"
-          "Average time: {:03.2f}ms\n",
+          "Average time: {:03.2f}ms",
           boost::posix_time::to_simple_string(
             boost::posix_time::microsec_clock::local_time()
           ),
           avgOCL
         );
 
-        fmt::print(stderr, "Check results.. ");
+        clest::println(stderr, "Check results.. ");
         size_t errorCount = 0;
         for (size_t i = 0; i < dataSerial.size(); i++) {
           if (dataSerial[i] != dataOCL[i]) {
@@ -343,35 +341,35 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        fmt::print(stderr, "{} errors out of {}\n\n", errorCount, dataSerial.size());
+        clest::println(stderr, "{} errors out of {}\n", errorCount, dataSerial.size());
         if (errorCount > 0) {
-          fmt::print(stderr, "**** FAILED ****\n\n");
+          clest::println(stderr, "**** FAILED ****\n");
           avgOCL = -1;
         }
         dataOCL = std::vector<uint8_t>();
 
       } catch (const cl::Error & error) {
-        fmt::print(stderr, "OpenCL error: {} ({})\n", error.what(), error.err());
+        clest::println(stderr, "OpenCL error: {} ({})", error.what(), error.err());
         switch (error.err()) {
           case CL_INVALID_PROGRAM_EXECUTABLE:
           case CL_BUILD_PROGRAM_FAILURE:
             if (programPtr == nullptr) {
-              fmt::print(stderr, "Program pointer is NULL\n");
+              clest::println(stderr, "Program pointer is NULL");
             } else {
               if (devicePtr == nullptr) {
-                fmt::print(stderr, "Device pointer is NULL\n");
+                clest::println(stderr, "Device pointer is NULL");
               }
-              fmt::print(stderr,
-                         "Build failure:\n{}\n",
-                         programPtr->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*devicePtr));
+              clest::println(stderr,
+                             "Build failure:\n{}",
+                             programPtr->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*devicePtr));
             }
             break;
         }
         return 1;
       }
 
-      fmt::print(
-        "{} {:03.2f} {:03.2f} {:03.2f}\n",
+      clest::println(
+        "{} {:03.2f} {:03.2f} {:03.2f}",
         size,
         avgSerial,
         avgParallel,
@@ -382,5 +380,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-#endif

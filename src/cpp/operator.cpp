@@ -1,124 +1,28 @@
-#ifdef MODE_OPERATOR
-
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "util.hpp"
-#include "las/LASFile.hpp"
-#include "las/Operations.hpp"
+#include <clest/util.hpp>
+
+#include "las/las_file.hpp"
+#include "las/operations.hpp"
 
 #ifdef _WIN32
 // Force high performance GPU
 extern "C" {
   // NVidia
-  __declspec(dllexport) DWORD NvOptimusEnablement = 1;
+  __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
 
   // AMD
   __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
-using namespace clest;
-
 namespace {
-  int _executeCL() {
-    // Verbose all platforms and devices
-    if (!util::listAll()) {
-      return 1;
-    }
 
-    // Choose device (and platform) that supports 64-bit
-    try {
-      std::vector<cl::Platform> platforms;
-      cl::Platform::get(&platforms);
-
-      if (platforms.empty()) {
-        fmt::print(stderr, "OpenCL platforms not found.\n");
-        return 1;
-      }
-
-      std::vector<cl::Device> devices;
-      fmt::print("Detecting double precision devices..\n");
-
-      fmt::print("Trying GPUs..\n");
-      util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_GPU);
-
-      if (devices.empty()) {
-        fmt::print(stderr, "GPUs with double precision not found.\n");
-
-        fmt::print("Trying other types..\n");
-        util::populateDevices(&platforms, &devices, CL_DEVICE_TYPE_ALL);
-
-        if (devices.empty()) {
-          fmt::print(stderr, "No devices with double precision found.\n");
-          return 1;
-        }
-      }
-
-      cl::Context context(devices);
-
-      cl::Device device = devices[0];
-      fmt::print("Going for: {}\n\n", device.getInfo<CL_DEVICE_NAME>());
-      cl::CommandQueue queue(context, device);
-
-      // Establishing global range
-      constexpr unsigned long long globalRepeats = 0x10000;
-      constexpr unsigned int workItemCount = 0x10000;
-      constexpr unsigned int workItemIterations = 0x100;
-      constexpr unsigned int dataSize = workItemCount * workItemIterations;
-      fmt::print("Global range: {} points\n",
-                 util::simplifyValue(globalRepeats * dataSize));
-
-      // Create data (local array and remote buffer)
-      fmt::print("Creating local array");
-      std::vector<unsigned char> localArray(dataSize, 0);
-      fmt::print(" and remote buffer..\n");
-      cl::Buffer remoteBuffer(context, CL_MEM_WRITE_ONLY, dataSize);
-
-      // Create program
-      fmt::print("Creating program..\n");
-      cl::Program program(
-        context,
-        util::loadProgram("opencl/fractal.cl"),
-        true);
-      /* cl::make_kernel<cl::Buffer> main(program, "fractalSingle"); */
-      cl::make_kernel<cl::Buffer, unsigned int> main(program, "fractalBlock");
-
-      for (unsigned repeat = 0; repeat < 0; repeat++) {
-        //for (unsigned repeat = 0; repeat < globalRepeats; repeat++) {
-        // Enqueue
-        /* std::cout << "Enqueueing.." << std::endl; */
-        /* main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)), remoteBuffer); */
-        main(cl::EnqueueArgs(queue, cl::NDRange(workItemCount)),
-             remoteBuffer,
-             workItemIterations);
-
-        // Finishing
-        /* std::cout << "Finishing.." << std::endl; */
-        queue.finish();
-
-        // Getting results
-        /* std::cout << "Getting results.." << std::endl; */
-        cl::copy(queue, remoteBuffer, localArray.begin(), localArray.end());
-
-        /* for (size_t i = 0; i < localArray.value(); i++) { */
-        /*   std::cout << static_cast<short>(localArray[i]) << ' '; */
-        /* } */
-      }
-      fmt::print("\n");
-
-    } catch (const cl::Error &err) {
-      fmt::print(stderr, "OpenCL error: {} ({})\n", err.what(), err.err());
-      return 1;
-    }
-
-    return 0;
-  }
-
-  template <typename T>
-  void _executeLoadChunks(las::LASFile<T> & lasFile) {
+  template <int N>
+  void _executeLoadChunks(las::LASFile<N> & lasFile) {
     uint32_t minX = static_cast<uint32_t>(
       (lasFile.publicHeader.minX - lasFile.publicHeader.xOffset)
       / lasFile.publicHeader.xScaleFactor);
@@ -170,18 +74,18 @@ namespace {
     fmt::print("Loaded total: {}\n\n", lasFile.pointData.size());
   }
 
-  template <typename T>
-  void _executeLoadAll(las::LASFile<T> & lasFile) {
+  template <int N>
+  void _executeLoadAll(las::LASFile<N> & lasFile) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Load All Starting [{}]\n",
                boost::posix_time::to_simple_string(start));
     fmt::print("Loading {} points\n",
-               util::simplifyValue(
+               clest::simplifyValue(
                  static_cast<double>(lasFile.pointDataCount())));
     lasFile.loadData();
     fmt::print("Loaded {} points\n\n",
-               util::simplifyValue(
+               clest::simplifyValue(
                  static_cast<double>(lasFile.pointData.size())));
     boost::posix_time::ptime end =
       boost::posix_time::second_clock::local_time();
@@ -192,8 +96,8 @@ namespace {
                boost::posix_time::to_simple_string(duration));
   }
 
-  template <typename T>
-  void _executeSimplify(const las::LASFile<T> & lasFile, const double factor) {
+  template <int N>
+  void _executeSimplify(const las::LASFile<N> & lasFile, const double factor) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Simplify Starting [{}]\n",
@@ -211,8 +115,8 @@ namespace {
                boost::posix_time::to_simple_string(duration));
   }
 
-  template <typename T>
-  void _executeColorize(const las::LASFile<T> & lasFile) {
+  template <int N>
+  void _executeColorize(const las::LASFile<N> & lasFile) {
     boost::posix_time::ptime start =
       boost::posix_time::second_clock::local_time();
     fmt::print("Colorize Starting [{}]\n",
@@ -227,8 +131,8 @@ namespace {
                boost::posix_time::to_simple_string(duration));
   }
 
-  template <typename T>
-  void _executeCGALWLOP(const las::LASFile<T> & lasFile,
+  template <int N>
+  void _executeCGALWLOP(const las::LASFile<N> & lasFile,
                        const double percentage,
                        const double radius,
                        const unsigned int iterations,
@@ -258,8 +162,8 @@ namespace {
                boost::posix_time::to_simple_string(duration));
   }
 
-  template <typename T>
-  int _mainExecuteBlock(las::LASFile<T> & lasFile) {
+  template <int N>
+  int _mainExecuteBlock(las::LASFile<N> & lasFile) {
     int returnValue = 0;
 
     lasFile.loadHeaders();
@@ -299,7 +203,7 @@ int main(int argc, char * argv[]) {
              boost::posix_time::to_simple_string(
                boost::posix_time::second_clock::local_time()));
 
-  las::LASFile<las::PointData<-1>> dummyLasFile(argv[1]);
+  las::LASFile<-1> dummyLasFile(argv[1]);
   fmt::print("Loading LAS file:\n{}\n", argv[1]);
   dummyLasFile.loadHeaders();
 
@@ -313,16 +217,16 @@ int main(int argc, char * argv[]) {
   int returnValue;
 
   if (dummyLasFile.publicHeader.pointDataRecordFormat == 0) {
-    las::LASFile<las::PointData<0>> lasFile(argv[1]);
+    las::LASFile<0> lasFile(argv[1]);
     returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 1) {
-    las::LASFile<las::PointData<1>> lasFile(argv[1]);
+    las::LASFile<1> lasFile(argv[1]);
     returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 2) {
-    las::LASFile<las::PointData<2>> lasFile(argv[1]);
+    las::LASFile<2> lasFile(argv[1]);
     returnValue = _mainExecuteBlock(lasFile);
   } else if (dummyLasFile.publicHeader.pointDataRecordFormat == 3) {
-    las::LASFile<las::PointData<3>> lasFile(argv[1]);
+    las::LASFile<3> lasFile(argv[1]);
     returnValue = _mainExecuteBlock(lasFile);
   } else {
     fmt::print(stderr,
@@ -339,5 +243,3 @@ int main(int argc, char * argv[]) {
   return returnValue;
 
 }
-
-#endif

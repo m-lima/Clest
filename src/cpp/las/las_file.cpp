@@ -43,14 +43,6 @@ namespace {
   ) {
     constexpr uint16_t BUFFER_SIZE = 8192;
 
-    // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw 
-    if (BUFFER_SIZE < typeSize) {
-       throw clest::Exception::build(
-         "BUFFER_SIZE ({}) is too small to fit typeSize ({})",
-         BUFFER_SIZE,
-         typeSize);
-    }
-
     // Clean up the container
     // Even if loading chunks, the memory is supposed to be capped
     container = std::vector<las::PointData<N>>();
@@ -274,6 +266,16 @@ namespace las {
     }
 
     return true;
+  }
+
+  template<int N>
+  bool LASFile<N>::isValidAndLoaded() const {
+    return isValid() && !pointData.empty();
+  }
+
+  template<int N>
+  bool LASFile<N>::isValidAndFullyLoaded() const {
+    return isValid() && _pointDataCount == pointData.size();
   }
 
 #define __DECLARE_TEMPLATES(index)\

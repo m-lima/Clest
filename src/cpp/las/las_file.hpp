@@ -19,6 +19,8 @@ namespace las {
     const std::string filePath;
 
     bool isValid() const;
+    bool isValidAndLoaded() const;
+    bool isValidAndFullyLoaded() const;
     void loadHeaders();
     uint64_t loadData(const Limits<uint32_t> & limits = Limits<uint32_t>());
     uint64_t pointDataCount() const;

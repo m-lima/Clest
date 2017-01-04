@@ -6,6 +6,7 @@ if(APPLE)
   set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
 endif()
 
+# Make $HOME compatible with windows
 STRING(REGEX REPLACE "\\\\" "/" ENV_HOME_DIR $ENV{HOME})
 
 # Add custom modules
@@ -93,16 +94,14 @@ else()
 endif()
 
 ##------------------------------------------------------------------------------
-## LAS
-##
-# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin/LASlib.lib")
-# list (APPEND LIBRARIES "${CMAKE_SOURCE_DIR}/lib/bin/LASzip.dll")
-
-##------------------------------------------------------------------------------
 ## Sources
 ##
 
 set(SOURCES
+  ${CPP_SRC_DIR}/main.cpp
+  )
+
+set(START_SRC
   ${CPP_SRC_DIR}/operator.cpp
   ${CPP_SRC_DIR}/grider.cpp
   ${CPP_SRC_DIR}/fractal.cpp
@@ -113,6 +112,7 @@ set(LAS_CPP
   ${CPP_SRC_DIR}/las/grid_file.cpp
   ${CPP_SRC_DIR}/las/operations.cpp
   )
+list(APPEND SOURCES ${LAS_CPP})
 
 set(LAS_HPP
   ${CPP_SRC_DIR}/las/public_header.hpp
@@ -137,10 +137,19 @@ set(OPENCL_SRC
   )
 
 if(MSVC)
-  list(APPEND SOURCES ${LAS_CPP})
+  # For MSVC, all files that are going to be visible in the IDE
+  # should be added to the source
+  list(APPEND SOURCES ${START_SRC})
   list(APPEND SOURCES ${LAS_HPP})
   list(APPEND SOURCES ${LIB_HPP})
   list(APPEND SOURCES ${OPENCL_SRC})
+
+  # Tell CMake to, even though these files are being added to the source,
+  # they should not be compiled
+  set_source_files_properties(${START_SRC} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${LAS_HPP} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${LIB_HPP} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${OPENCL_SRC} PROPERTIES HEADER_FILE_ONLY true)
 endif()
 
 ##------------------------------------------------------------------------------
@@ -161,13 +170,23 @@ add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 ## Targets
 ##
 
+# Create project
 add_executable(clest ${SOURCES})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
+
+# Link with FIND_PACKAGE
 target_link_libraries(clest ${LIBRARIES})
+
+# Add manual includes
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
+
+# Specify a global access to the lib directory
 target_include_directories(clest PRIVATE ${CPP_SRC_DIR}/lib)
-set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
+
+# Perform the always-execute actions
 add_dependencies(clest always)
+
+# Cascade to C++ CMake's variables
 if (CGAL_FOUND)
   add_definitions(-D_CMAKE_CGAL_FOUND)
 endif()
@@ -177,18 +196,20 @@ endif()
 if (TBB_FOUND)
   add_definitions(-D_CMAKE_TBB_FOUND)
 endif()
-add_definitions(-DMODE_GRIDER)
 
 ##------------------------------------------------------------------------------
 ## MSVC Specifics
 ##
 
 if(MSVC)
+
+  # Folder organization within MSVC
   source_group("Source Files\\Las" FILES ${LAS_CPP})
   source_group("Header Files\\Las" FILES ${LAS_HPP})
   source_group("Header Files\\Libs" FILES ${LIB_HPP})
   source_group("OpenCL" FILES ${OPENCL_SRC})
 
+  # Choose the main project
   if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.5)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT clest)
   endif()

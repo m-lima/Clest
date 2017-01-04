@@ -17,6 +17,7 @@
 //
 // Author(s) : Shihao Wu, Clement Jamin, Pierre Alliez 
 
+#ifdef _CMAKE_CGAL_FOUND
 #ifndef CLEST_WLOP_SIMPLIFY_VERBOSE_HPP
 #define CLEST_WLOP_SIMPLIFY_VERBOSE_HPP
 
@@ -51,15 +52,15 @@ namespace CGAL {
 // ----------------------------------------------------------------------------
 /// \cond SKIP_IN_MANUAL
 
-  constexpr int TIMER_COUNT = 4;
-  boost::posix_time::ptime current[TIMER_COUNT];
-  boost::posix_time::ptime last[TIMER_COUNT];
+	constexpr int TIMER_COUNT = 4;
+	boost::posix_time::ptime current[TIMER_COUNT];
+	boost::posix_time::ptime last[TIMER_COUNT];
 
-  void updateLast(int i) {
-    for (int j = TIMER_COUNT - 1; j >= i; j--) {
-      last[j] = current[i];
-    }
-  }
+	void updateLast(int i) {
+		for (int j = TIMER_COUNT - 1; j >= i; j--) {
+			last[j] = current[i];
+		}
+	}
 
 namespace simplify_and_regularize_internal{
 
@@ -68,21 +69,21 @@ template <typename Kernel>
 class Kd_tree_element : public Kernel::Point_3
 {
 public:
-  unsigned int index;
+	unsigned int index;
 
-  // basic geometric types
-  typedef typename CGAL::Origin Origin;
-  typedef typename Kernel::Point_3 Base;
+	// basic geometric types
+	typedef typename CGAL::Origin Origin;
+	typedef typename Kernel::Point_3 Base;
 
-  Kd_tree_element(const Origin& o = ORIGIN, unsigned int id=0)
-    : Base(o), index(id)
-  {}
-  Kd_tree_element(const Base& p, unsigned int id=0)
-    : Base(p), index(id)
-  {}
-  Kd_tree_element(const Kd_tree_element& other)
-    : Base(other), index(other.index)
-  {}
+	Kd_tree_element(const Origin& o = ORIGIN, unsigned int id=0)
+		: Base(o), index(id)
+	{}
+	Kd_tree_element(const Base& p, unsigned int id=0)
+		: Base(p), index(id)
+	{}
+	Kd_tree_element(const Kd_tree_element& other)
+		: Base(other), index(other.index)
+	{}
 };
 
 // Helper class for the Kd-tree
@@ -90,14 +91,14 @@ template <typename Kernel>
 class Kd_tree_gt : public Kernel
 {
 public:
-  typedef Kd_tree_element<Kernel> Point_3;
+	typedef Kd_tree_element<Kernel> Point_3;
 };
 
 template <typename Kernel>
 class Kd_tree_traits : public CGAL::Search_traits_3<Kd_tree_gt<Kernel> >
 {
 public:
-  typedef typename Kernel::Point_3 PointType;
+	typedef typename Kernel::Point_3 PointType;
 };
 
 /// Compute average and repulsion term, then 
@@ -110,124 +111,124 @@ public:
 ///
 /// @return average term vector
 template <typename Kernel,
-          typename Tree,
-          typename RandomAccessIterator>
+					typename Tree,
+					typename RandomAccessIterator>
 typename Kernel::Point_3
 compute_update_sample_point(
-  const typename Kernel::Point_3& query, ///< 3D point to project
-  const Tree& original_kd_tree,          ///< original Kd-tree
-  const Tree& sample_kd_tree,            ///< sample Kd-tree
-  const typename Kernel::FT radius,      ///< neighborhood radius square
-  const std::vector<typename Kernel::FT>& original_densities, ///<  
-  const std::vector<typename Kernel::FT>& sample_densities ///< 
+	const typename Kernel::Point_3& query, ///< 3D point to project
+	const Tree& original_kd_tree,          ///< original Kd-tree
+	const Tree& sample_kd_tree,            ///< sample Kd-tree
+	const typename Kernel::FT radius,      ///< neighborhood radius square
+	const std::vector<typename Kernel::FT>& original_densities, ///<  
+	const std::vector<typename Kernel::FT>& sample_densities ///< 
 )
 {
-  CGAL_point_set_processing_precondition(radius > 0);
-  bool is_original_densities_empty = original_densities.empty();
-  bool is_sample_densities_empty = sample_densities.empty();
+	CGAL_point_set_processing_precondition(radius > 0);
+	bool is_original_densities_empty = original_densities.empty();
+	bool is_sample_densities_empty = sample_densities.empty();
 
-  // basic geometric types
-  typedef typename Kernel::Point_3 Point;
-  typedef typename Kernel::Vector_3 Vector;
-  typedef typename Kernel::FT FT;
+	// basic geometric types
+	typedef typename Kernel::Point_3 Point;
+	typedef typename Kernel::Vector_3 Vector;
+	typedef typename Kernel::FT FT;
 
-  //types for range search
-  typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
-  typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
-  typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
+	//types for range search
+	typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
+	typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
+	typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
 
-  //range search for original neighborhood
-  Fuzzy_sphere fs(query, radius, 0.0);
-  std::vector<Kd_tree_point> neighbor_original_points;
-  original_kd_tree.search(std::back_inserter(neighbor_original_points), fs);
+	//range search for original neighborhood
+	Fuzzy_sphere fs(query, radius, 0.0);
+	std::vector<Kd_tree_point> neighbor_original_points;
+	original_kd_tree.search(std::back_inserter(neighbor_original_points), fs);
 
-  //Compute average term
-  FT radius2 = radius * radius;
-  Vector average = CGAL::NULL_VECTOR; 
-  FT weight = (FT)0.0, average_weight_sum = (FT)0.0;
-  FT iradius16 = -(FT)4.0 / radius2;
+	//Compute average term
+	FT radius2 = radius * radius;
+	Vector average = CGAL::NULL_VECTOR; 
+	FT weight = (FT)0.0, average_weight_sum = (FT)0.0;
+	FT iradius16 = -(FT)4.0 / radius2;
 
-  typename std::vector<Kd_tree_point>::iterator iter;
-  iter = neighbor_original_points.begin();
-  for (; iter != neighbor_original_points.end(); ++iter)
-  {
-    const Point& np = *iter;
+	typename std::vector<Kd_tree_point>::iterator iter;
+	iter = neighbor_original_points.begin();
+	for (; iter != neighbor_original_points.end(); ++iter)
+	{
+		const Point& np = *iter;
 
-    Kd_tree_point& kp = *iter;
-    int original_index = kp.index;
+		Kd_tree_point& kp = *iter;
+		int original_index = kp.index;
 
-    FT dist2 = CGAL::squared_distance(query, np);
-    if (dist2 < 1e-10) continue;
+		FT dist2 = CGAL::squared_distance(query, np);
+		if (dist2 < 1e-10) continue;
 
-    weight = exp(dist2 * iradius16);
+		weight = exp(dist2 * iradius16);
 
-    if (!is_original_densities_empty)
-    {
-      weight *= original_densities[original_index];
-    }
-    average_weight_sum += weight;
-    average = average + (np - CGAL::ORIGIN) * weight;
-  }
+		if (!is_original_densities_empty)
+		{
+			weight *= original_densities[original_index];
+		}
+		average_weight_sum += weight;
+		average = average + (np - CGAL::ORIGIN) * weight;
+	}
 
-  if (neighbor_original_points.empty() || average_weight_sum < FT(1e-10))
-  {
-    average = query - CGAL::ORIGIN;
-  }
-  else
-  {
-    average = average / average_weight_sum; 
-  }
-  neighbor_original_points.clear();
-  
+	if (neighbor_original_points.empty() || average_weight_sum < FT(1e-10))
+	{
+		average = query - CGAL::ORIGIN;
+	}
+	else
+	{
+		average = average / average_weight_sum; 
+	}
+	neighbor_original_points.clear();
+	
 
-  //Compute repulsion term
+	//Compute repulsion term
 
-  Fuzzy_sphere fs2(query, radius, 0.0);
-  std::vector<Kd_tree_point> neighbor_sample_points;
-  sample_kd_tree.search(std::back_inserter(neighbor_sample_points), fs2);
+	Fuzzy_sphere fs2(query, radius, 0.0);
+	std::vector<Kd_tree_point> neighbor_sample_points;
+	sample_kd_tree.search(std::back_inserter(neighbor_sample_points), fs2);
 
-  weight = (FT)0.0;
-  FT repulsion_weight_sum = (FT)0.0;
-  Vector repulsion = CGAL::NULL_VECTOR; 
+	weight = (FT)0.0;
+	FT repulsion_weight_sum = (FT)0.0;
+	Vector repulsion = CGAL::NULL_VECTOR; 
 
-  iter = neighbor_sample_points.begin();
-  for(; iter != neighbor_sample_points.end(); ++iter)
-  {
-    const Point& np = *iter;
+	iter = neighbor_sample_points.begin();
+	for(; iter != neighbor_sample_points.end(); ++iter)
+	{
+		const Point& np = *iter;
 
-    Kd_tree_point& kp = *iter;
-    int sample_index = kp.index;
+		Kd_tree_point& kp = *iter;
+		int sample_index = kp.index;
 
-    FT dist2 = CGAL::squared_distance(query, np);
-    if (dist2 < 1e-10) continue;
-    FT dist = std::sqrt(dist2);
-    
-    weight = std::exp(dist2 * iradius16) * std::pow(FT(1.0) / dist, 2); // L1
-   
-    if (!is_sample_densities_empty)
-    {
-      weight *= sample_densities[sample_index];
-    }
+		FT dist2 = CGAL::squared_distance(query, np);
+		if (dist2 < 1e-10) continue;
+		FT dist = std::sqrt(dist2);
+		
+		weight = std::exp(dist2 * iradius16) * std::pow(FT(1.0) / dist, 2); // L1
+	 
+		if (!is_sample_densities_empty)
+		{
+			weight *= sample_densities[sample_index];
+		}
 
-    Vector diff = query - np;
+		Vector diff = query - np;
 
-    repulsion_weight_sum += weight;
-    repulsion = repulsion + diff * weight;
-  }
+		repulsion_weight_sum += weight;
+		repulsion = repulsion + diff * weight;
+	}
 
-  if (neighbor_sample_points.size() < 3 || repulsion_weight_sum < FT(1e-10))
-  {
-    repulsion = CGAL::NULL_VECTOR;
-  }
-  else
-  {
-    repulsion = repulsion / repulsion_weight_sum; 
-  }
-  neighbor_sample_points.clear();
+	if (neighbor_sample_points.size() < 3 || repulsion_weight_sum < FT(1e-10))
+	{
+		repulsion = CGAL::NULL_VECTOR;
+	}
+	else
+	{
+		repulsion = repulsion / repulsion_weight_sum; 
+	}
+	neighbor_sample_points.clear();
 
-  // Compute update sample point
-  Point update_sample = CGAL::ORIGIN + average + FT(0.45) * repulsion;
-  return update_sample;
+	// Compute update sample point
+	Point update_sample = CGAL::ORIGIN + average + FT(0.45) * repulsion;
+	return update_sample;
 }
 
 
@@ -243,48 +244,48 @@ compute_update_sample_point(
 template <typename Kernel, typename Tree>
 typename Kernel::FT
 compute_density_weight_for_original_point(
-  const typename Kernel::Point_3& query, ///< 3D point to project
-  Tree& original_kd_tree,                       ///< Kd-tree
-  const typename Kernel::FT radius       ///< neighbor radius square
+	const typename Kernel::Point_3& query, ///< 3D point to project
+	Tree& original_kd_tree,                       ///< Kd-tree
+	const typename Kernel::FT radius       ///< neighbor radius square
 )
 {
-  CGAL_point_set_processing_precondition(radius > 0);
+	CGAL_point_set_processing_precondition(radius > 0);
 
-  // basic geometric types
-  typedef typename Kernel::Point_3                         Point;
-  typedef typename Kernel::FT                              FT;
-                                                          
-  //types for range search
-  typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
-  typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
-  typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
+	// basic geometric types
+	typedef typename Kernel::Point_3                         Point;
+	typedef typename Kernel::FT                              FT;
+																													
+	//types for range search
+	typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
+	typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
+	typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
 
-  //range search for original neighborhood
-  Fuzzy_sphere fs(query, radius, 0.0);
-  std::vector<Kd_tree_point> neighbor_original_points;
+	//range search for original neighborhood
+	Fuzzy_sphere fs(query, radius, 0.0);
+	std::vector<Kd_tree_point> neighbor_original_points;
 
-  original_kd_tree.search(std::back_inserter(neighbor_original_points), fs);
+	original_kd_tree.search(std::back_inserter(neighbor_original_points), fs);
 
-  //Compute density weight
-  FT radius2 = radius * radius;
-  FT density_weight = (FT)1.0;
-  FT iradius16 = -(FT)4.0 / radius2;
+	//Compute density weight
+	FT radius2 = radius * radius;
+	FT density_weight = (FT)1.0;
+	FT iradius16 = -(FT)4.0 / radius2;
 
-  typename std::vector<Kd_tree_point>::iterator iter;
-  iter = neighbor_original_points.begin();
+	typename std::vector<Kd_tree_point>::iterator iter;
+	iter = neighbor_original_points.begin();
 
-  for (; iter != neighbor_original_points.end(); iter++)
-  {
-    const Point& np = *iter;
+	for (; iter != neighbor_original_points.end(); iter++)
+	{
+		const Point& np = *iter;
 
-    FT dist2 = CGAL::squared_distance(query, np);
-    if (dist2 < 1e-8) continue;
-    
-    density_weight += std::exp(dist2 * iradius16);
-  }
+		FT dist2 = CGAL::squared_distance(query, np);
+		if (dist2 < 1e-8) continue;
+		
+		density_weight += std::exp(dist2 * iradius16);
+	}
 
-  // output
-  return FT(1.0) / density_weight;
+	// output
+	return FT(1.0) / density_weight;
 }
 
 
@@ -300,42 +301,42 @@ compute_density_weight_for_original_point(
 template <typename Kernel, typename Tree>
 typename Kernel::FT
 compute_density_weight_for_sample_point(
-  const typename Kernel::Point_3& query, ///< 3D point to project
-  Tree& sample_kd_tree,                ///< Kd-tree
-  const typename Kernel::FT radius       ///< neighbor radius square
+	const typename Kernel::Point_3& query, ///< 3D point to project
+	Tree& sample_kd_tree,                ///< Kd-tree
+	const typename Kernel::FT radius       ///< neighbor radius square
 )
 {
-  // basic geometric types
-  typedef typename Kernel::Point_3                          Point;
-  typedef typename Kernel::FT                               FT;
+	// basic geometric types
+	typedef typename Kernel::Point_3                          Point;
+	typedef typename Kernel::FT                               FT;
 
-  //types for range search
-  typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
-  typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
-  typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
+	//types for range search
+	typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_point;
+	typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Traits;
+	typedef CGAL::Fuzzy_sphere<Traits> Fuzzy_sphere;
 
-  //range search for original neighborhood
-  Fuzzy_sphere fs(query, radius, 0.0);
-  std::vector<Kd_tree_point> neighbor_sample_points;
-  sample_kd_tree.search(std::back_inserter(neighbor_sample_points), fs);
+	//range search for original neighborhood
+	Fuzzy_sphere fs(query, radius, 0.0);
+	std::vector<Kd_tree_point> neighbor_sample_points;
+	sample_kd_tree.search(std::back_inserter(neighbor_sample_points), fs);
 
-  //Compute density weight
-  FT radius2 = radius * radius;
-  FT density_weight = (FT)1.0;
-  FT iradius16 = -(FT)4.0 / radius2;
+	//Compute density weight
+	FT radius2 = radius * radius;
+	FT density_weight = (FT)1.0;
+	FT iradius16 = -(FT)4.0 / radius2;
 
-  typename std::vector<Kd_tree_point>::iterator iter;
-  iter = neighbor_sample_points.begin();
+	typename std::vector<Kd_tree_point>::iterator iter;
+	iter = neighbor_sample_points.begin();
 
-  for (; iter != neighbor_sample_points.end(); iter++)
-  {
-    const Point& np = *iter;
+	for (; iter != neighbor_sample_points.end(); iter++)
+	{
+		const Point& np = *iter;
 
-    FT dist2 = CGAL::squared_distance(query, np);
-    density_weight += std::exp(dist2 * iradius16);
-  }
-  
-  return density_weight;
+		FT dist2 = CGAL::squared_distance(query, np);
+		density_weight += std::exp(dist2 * iradius16);
+	}
+	
+	return density_weight;
 }
 
 } // namespace simplify_and_regularize_internal
@@ -348,61 +349,61 @@ compute_density_weight_for_sample_point(
 template <typename Kernel, typename Tree, typename RandomAccessIterator>
 class Sample_point_updater 
 {
-  typedef typename Kernel::Point_3   Point;
-  typedef typename Kernel::FT        FT;
+	typedef typename Kernel::Point_3   Point;
+	typedef typename Kernel::FT        FT;
 
-  std::vector<Point> &update_sample_points;
-  std::vector<Point> &sample_points;
-  const Tree &original_kd_tree;            
-  const Tree &sample_kd_tree;              
-  const typename Kernel::FT radius;  
-  const std::vector<typename Kernel::FT> &original_densities;
-  const std::vector<typename Kernel::FT> &sample_densities; 
+	std::vector<Point> &update_sample_points;
+	std::vector<Point> &sample_points;
+	const Tree &original_kd_tree;            
+	const Tree &sample_kd_tree;              
+	const typename Kernel::FT radius;  
+	const std::vector<typename Kernel::FT> &original_densities;
+	const std::vector<typename Kernel::FT> &sample_densities; 
 
 public:
-  Sample_point_updater(
-    std::vector<Point> &out,
-    std::vector<Point> &in,
-    const Tree &_original_kd_tree,            
-    const Tree &_sample_kd_tree,              
-    const typename Kernel::FT _radius,
-    const std::vector<typename Kernel::FT> &_original_densities,
-    const std::vector<typename Kernel::FT> &_sample_densities): 
-  update_sample_points(out), 
-    sample_points(in),
-    original_kd_tree(_original_kd_tree),
-    sample_kd_tree(_sample_kd_tree),
-    radius(_radius),
-    original_densities(_original_densities),
-    sample_densities(_sample_densities){} 
+	Sample_point_updater(
+		std::vector<Point> &out,
+		std::vector<Point> &in,
+		const Tree &_original_kd_tree,            
+		const Tree &_sample_kd_tree,              
+		const typename Kernel::FT _radius,
+		const std::vector<typename Kernel::FT> &_original_densities,
+		const std::vector<typename Kernel::FT> &_sample_densities): 
+	update_sample_points(out), 
+		sample_points(in),
+		original_kd_tree(_original_kd_tree),
+		sample_kd_tree(_sample_kd_tree),
+		radius(_radius),
+		original_densities(_original_densities),
+		sample_densities(_sample_densities){} 
 
 
-  void operator() ( const tbb::blocked_range<size_t>& r ) const 
-  { 
-    boost::posix_time::ptime tCurrent = boost::posix_time::second_clock::local_time();
-    boost::posix_time::ptime tLast = boost::posix_time::second_clock::local_time();
-    size_t range = r.end() - r.begin();
-    if (range < 100) { range = 100; }
+	void operator() ( const tbb::blocked_range<size_t>& r ) const 
+	{ 
+		boost::posix_time::ptime tCurrent = boost::posix_time::second_clock::local_time();
+		boost::posix_time::ptime tLast = boost::posix_time::second_clock::local_time();
+		size_t range = r.end() - r.begin();
+		if (range < 100) { range = 100; }
 
-    for (size_t i = r.begin(); i != r.end(); ++i) 
-    {
-      if (r.begin() == 0) {
-        if (i % (range / 100) == 0) {
-          tCurrent = boost::posix_time::second_clock::local_time();
-          fmt::print("----- Samplepoint updater [{}%] [{} :: {}]\n", (i + 1) * 100 / range, boost::posix_time::to_simple_string(tCurrent), boost::posix_time::to_simple_string(tCurrent - tLast));
-          tLast = tCurrent;
-        }
-      }
-      update_sample_points[i] = simplify_and_regularize_internal::
-        compute_update_sample_point<Kernel, Tree, RandomAccessIterator>(
-        sample_points[i], 
-        original_kd_tree,
-        sample_kd_tree,
-        radius, 
-        original_densities,
-        sample_densities);
-    }
-  }
+		for (size_t i = r.begin(); i != r.end(); ++i) 
+		{
+			if (r.begin() == 0) {
+				if (i % (range / 100) == 0) {
+					tCurrent = boost::posix_time::second_clock::local_time();
+					fmt::print("----- Samplepoint updater [{}%] [{} :: {}]\n", (i + 1) * 100 / range, boost::posix_time::to_simple_string(tCurrent), boost::posix_time::to_simple_string(tCurrent - tLast));
+					tLast = tCurrent;
+				}
+			}
+			update_sample_points[i] = simplify_and_regularize_internal::
+				compute_update_sample_point<Kernel, Tree, RandomAccessIterator>(
+				sample_points[i], 
+				original_kd_tree,
+				sample_kd_tree,
+				radius, 
+				original_densities,
+				sample_densities);
+		}
+	}
 };
 /// \endcond  
 #endif // CGAL_LINKED_WITH_TBB
@@ -444,296 +445,296 @@ public:
 
 // This variant requires all parameters.
 template <typename Concurrency_tag,
-          typename OutputIterator,
-          typename RandomAccessIterator,
-          typename PointPMap,
-          typename Kernel>
+					typename OutputIterator,
+					typename RandomAccessIterator,
+					typename PointPMap,
+					typename Kernel>
 OutputIterator
 wlop_simplify_and_regularize_point_set(
-  RandomAccessIterator first,  ///< random-access iterator to the first input point.
-  RandomAccessIterator beyond, ///< past-the-end iterator.
-  OutputIterator output,       ///< output iterator where output points are put.
-  PointPMap point_pmap,        ///< point property map.
-  double select_percentage,    ///< percentage of points to retain. 
-                               ///< The default value is set to 5 (\%).
-  double radius,               ///< spherical neighborhood radius.
-                               ///< This is a key parameter that needs to be finely tuned.  
-                               ///< The result will be irregular if too small, but a larger
-                               ///< value will impact the runtime.
-                               ///< In practice, choosing a radius such that the neighborhood of each sample point
-                               ///< includes at least two rings of neighboring sample points
-                               ///< gives satisfactory result.
-                               ///< The default value is set to 8 times the average spacing of the point set.
-  unsigned int iter_number,    ///< number of iterations to solve the optimsation problem. The default value is 35.
-                               ///< More iterations give a more regular result but increase the runtime.
-  bool require_uniform_sampling,///< an optional preprocessing, which will give better result
-                               ///< if the distribution of the input points is highly non-uniform. 
-                               ///< The default value is `false`. 
-  const Kernel&                ///< geometric traits.
+	RandomAccessIterator first,  ///< random-access iterator to the first input point.
+	RandomAccessIterator beyond, ///< past-the-end iterator.
+	OutputIterator output,       ///< output iterator where output points are put.
+	PointPMap point_pmap,        ///< point property map.
+	double select_percentage,    ///< percentage of points to retain. 
+															 ///< The default value is set to 5 (\%).
+	double radius,               ///< spherical neighborhood radius.
+															 ///< This is a key parameter that needs to be finely tuned.  
+															 ///< The result will be irregular if too small, but a larger
+															 ///< value will impact the runtime.
+															 ///< In practice, choosing a radius such that the neighborhood of each sample point
+															 ///< includes at least two rings of neighboring sample points
+															 ///< gives satisfactory result.
+															 ///< The default value is set to 8 times the average spacing of the point set.
+	unsigned int iter_number,    ///< number of iterations to solve the optimsation problem. The default value is 35.
+															 ///< More iterations give a more regular result but increase the runtime.
+	bool require_uniform_sampling,///< an optional preprocessing, which will give better result
+															 ///< if the distribution of the input points is highly non-uniform. 
+															 ///< The default value is `false`. 
+	const Kernel&                ///< geometric traits.
 )
 {
-  // basic geometric types
-  typedef typename Kernel::Point_3   Point;
-  typedef typename Kernel::FT        FT;
+	// basic geometric types
+	typedef typename Kernel::Point_3   Point;
+	typedef typename Kernel::FT        FT;
 
-  // types for K nearest neighbors search structure
-  typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_element;
-  typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Tree_traits;
-  typedef CGAL::Orthogonal_k_neighbor_search<Tree_traits> Neighbor_search;
-  typedef typename Neighbor_search::Tree Kd_Tree;
-  
-  current[0] = boost::posix_time::second_clock::local_time();
-  last[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Entered WLOP [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
+	// types for K nearest neighbors search structure
+	typedef simplify_and_regularize_internal::Kd_tree_element<Kernel> Kd_tree_element;
+	typedef simplify_and_regularize_internal::Kd_tree_traits<Kernel> Tree_traits;
+	typedef CGAL::Orthogonal_k_neighbor_search<Tree_traits> Neighbor_search;
+	typedef typename Neighbor_search::Tree Kd_Tree;
+	
+	current[0] = boost::posix_time::second_clock::local_time();
+	last[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Entered WLOP [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
 
-  // precondition: at least one element in the container.
-  // to fix: should have at least three distinct points
-  // but this is costly to check
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Setting preconditions [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  CGAL_point_set_processing_precondition(first != beyond);
-  CGAL_point_set_processing_precondition(select_percentage >= 0 
-                                         && select_percentage <= 100);
+	// precondition: at least one element in the container.
+	// to fix: should have at least three distinct points
+	// but this is costly to check
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Setting preconditions [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	CGAL_point_set_processing_precondition(first != beyond);
+	CGAL_point_set_processing_precondition(select_percentage >= 0 
+																				 && select_percentage <= 100);
 
-  // Random shuffle
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Random shuffle [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  std::random_shuffle (first, beyond);
+	// Random shuffle
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Random shuffle [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	std::random_shuffle (first, beyond);
 
-  // Computes original(input) and sample points size 
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Create copy [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  std::size_t number_of_original = std::distance(first, beyond);
-  std::size_t number_of_sample = (std::size_t)(FT(number_of_original) * 
-                                 (select_percentage / FT(100.0)));
-  std::size_t first_index_to_sample = number_of_original - number_of_sample;
+	// Computes original(input) and sample points size 
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Create copy [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	std::size_t number_of_original = std::distance(first, beyond);
+	std::size_t number_of_sample = (std::size_t)(FT(number_of_original) * 
+																 (select_percentage / FT(100.0)));
+	std::size_t first_index_to_sample = number_of_original - number_of_sample;
 
-  // The first point iter of original and sample points
-  RandomAccessIterator it;                             // point iterator
-  RandomAccessIterator first_original_iter = first;
-  RandomAccessIterator first_sample_iter = first;
-  std::advance(first_sample_iter, first_index_to_sample);
+	// The first point iter of original and sample points
+	RandomAccessIterator it;                             // point iterator
+	RandomAccessIterator first_original_iter = first;
+	RandomAccessIterator first_sample_iter = first;
+	std::advance(first_sample_iter, first_index_to_sample);
 
-  //Copy sample points
-  std::vector<Point> sample_points;
-  sample_points.reserve(number_of_sample);
-  unsigned int i;                                     
+	//Copy sample points
+	std::vector<Point> sample_points;
+	sample_points.reserve(number_of_sample);
+	unsigned int i;                                     
 
-  for(it = first_sample_iter; it != beyond; ++it)
-  {
-    sample_points.push_back(get(point_pmap, *it));
-  }
-  
-  //compute default neighbor_radius, if no radius in
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Compute default neighbor radius [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  if (radius < 0)
-  {
-    const unsigned int nb_neighbors = 6; // 1 ring
-    FT average_spacing = CGAL::compute_average_spacing<Concurrency_tag>(
-                               first, beyond,
-                               point_pmap,
-                               nb_neighbors);
-    radius = average_spacing * 8.0;
+	for(it = first_sample_iter; it != beyond; ++it)
+	{
+		sample_points.push_back(get(point_pmap, *it));
+	}
+	
+	//compute default neighbor_radius, if no radius in
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Compute default neighbor radius [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	if (radius < 0)
+	{
+		const unsigned int nb_neighbors = 6; // 1 ring
+		FT average_spacing = CGAL::compute_average_spacing<Concurrency_tag>(
+															 first, beyond,
+															 point_pmap,
+															 nb_neighbors);
+		radius = average_spacing * 8.0;
 
 #ifdef CGAL_PSP3_VERBOSE
-    std::cout << "The estimated radius size is: " << radius << std::endl;
-    std::cout << "Be careful! Using this radius estimation may not be able to have good performance/result for different input" << std::endl;
+		std::cout << "The estimated radius size is: " << radius << std::endl;
+		std::cout << "Be careful! Using this radius estimation may not be able to have good performance/result for different input" << std::endl;
 #endif
-  }
-  fmt::print("  >> Using radius: {}\n", radius);
+	}
+	fmt::print("  >> Using radius: {}\n", radius);
 
-  FT radius2 = radius * radius;
-  CGAL_point_set_processing_precondition(radius > 0);
+	FT radius2 = radius * radius;
+	CGAL_point_set_processing_precondition(radius > 0);
 
-  // Initiate a KD-tree search for original points
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Initiate a KD-tree search for original points [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  std::vector<Kd_tree_element> original_treeElements;
-  for (it = first_original_iter, i=0 ; it != beyond ; ++it, ++i)
-    original_treeElements.push_back( Kd_tree_element(get(point_pmap, *it), i) );
-  Kd_Tree original_kd_tree(original_treeElements.begin(), 
-                           original_treeElements.end());
+	// Initiate a KD-tree search for original points
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Initiate a KD-tree search for original points [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	std::vector<Kd_tree_element> original_treeElements;
+	for (it = first_original_iter, i=0 ; it != beyond ; ++it, ++i)
+		original_treeElements.push_back( Kd_tree_element(get(point_pmap, *it), i) );
+	Kd_Tree original_kd_tree(original_treeElements.begin(), 
+													 original_treeElements.end());
 
 
-  std::vector<Point> update_sample_points(number_of_sample);
-  typename std::vector<Point>::iterator sample_iter;
-  
-  // Compute original density weight for original points if user needed
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Compute original density weight for original points if user needed [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
-  updateLast(0);
-  std::vector<FT> original_density_weights;
+	std::vector<Point> update_sample_points(number_of_sample);
+	typename std::vector<Point>::iterator sample_iter;
+	
+	// Compute original density weight for original points if user needed
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Compute original density weight for original points if user needed [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0]-last[0]));
+	updateLast(0);
+	std::vector<FT> original_density_weights;
 
-  uint64_t counter_ = 1;
-  if (require_uniform_sampling)//default value is false
-  {
-    //todo: this part could also be parallelized if needed
-    current[0] = boost::posix_time::second_clock::local_time();
-    fmt::print("Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
-    updateLast(0);
-    for (it = first_original_iter, i = 0; it != beyond ; ++it, ++i)
-    {
-      current[1] = boost::posix_time::second_clock::local_time();
-      fmt::print("- Simplify and regularize [{}/{}] [{} :: {}]\n", counter_++, beyond - first_original_iter, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
-      updateLast(1);
-      FT density = simplify_and_regularize_internal::
-                   compute_density_weight_for_original_point<Kernel, Kd_Tree>
-                                         (
-                                           get(point_pmap, *it),
-                                           original_kd_tree, 
-                                           radius);
+	uint64_t counter_ = 1;
+	if (require_uniform_sampling)//default value is false
+	{
+		//todo: this part could also be parallelized if needed
+		current[0] = boost::posix_time::second_clock::local_time();
+		fmt::print("Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
+		updateLast(0);
+		for (it = first_original_iter, i = 0; it != beyond ; ++it, ++i)
+		{
+			current[1] = boost::posix_time::second_clock::local_time();
+			fmt::print("- Simplify and regularize [{}/{}] [{} :: {}]\n", counter_++, beyond - first_original_iter, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
+			updateLast(1);
+			FT density = simplify_and_regularize_internal::
+									 compute_density_weight_for_original_point<Kernel, Kd_Tree>
+																				 (
+																					 get(point_pmap, *it),
+																					 original_kd_tree, 
+																					 radius);
 
-      original_density_weights.push_back(density);
-    }
-  }
+			original_density_weights.push_back(density);
+		}
+	}
 
-  current[0] = boost::posix_time::second_clock::local_time();
-  fmt::print("Main loop [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
-  updateLast(0);
-  for (unsigned int iter_n = 0; iter_n < iter_number; ++iter_n)
-  {
-    current[1] = boost::posix_time::second_clock::local_time();
-    fmt::print("- Main loop [{}/{}] [{} :: {}]\n", iter_n + 1, iter_number, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
-    updateLast(1);
-    // Initiate a KD-tree search for sample points
-    current[2] = boost::posix_time::second_clock::local_time();
-    fmt::print("--- Initiate a KD-tree search for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
-    updateLast(2);
-    std::vector<Kd_tree_element> sample_treeElements;
-    for (i=0 ; i < sample_points.size(); i++)
-    {
-      Point& p0 = sample_points[i];
-      sample_treeElements.push_back(Kd_tree_element(p0,i));
-    }
-    Kd_Tree sample_kd_tree(sample_treeElements.begin(), sample_treeElements.end());
+	current[0] = boost::posix_time::second_clock::local_time();
+	fmt::print("Main loop [{} :: {}]\n", boost::posix_time::to_simple_string(current[0]), boost::posix_time::to_simple_string(current[0] - last[0]));
+	updateLast(0);
+	for (unsigned int iter_n = 0; iter_n < iter_number; ++iter_n)
+	{
+		current[1] = boost::posix_time::second_clock::local_time();
+		fmt::print("- Main loop [{}/{}] [{} :: {}]\n", iter_n + 1, iter_number, boost::posix_time::to_simple_string(current[1]), boost::posix_time::to_simple_string(current[1]-last[1]));
+		updateLast(1);
+		// Initiate a KD-tree search for sample points
+		current[2] = boost::posix_time::second_clock::local_time();
+		fmt::print("--- Initiate a KD-tree search for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+		updateLast(2);
+		std::vector<Kd_tree_element> sample_treeElements;
+		for (i=0 ; i < sample_points.size(); i++)
+		{
+			Point& p0 = sample_points[i];
+			sample_treeElements.push_back(Kd_tree_element(p0,i));
+		}
+		Kd_Tree sample_kd_tree(sample_treeElements.begin(), sample_treeElements.end());
 
-    // Compute sample density weight for sample points
-    current[2] = boost::posix_time::second_clock::local_time();
-    fmt::print("--- Compute sample density weight for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
-    updateLast(2);
-    std::vector<FT> sample_density_weights;
+		// Compute sample density weight for sample points
+		current[2] = boost::posix_time::second_clock::local_time();
+		fmt::print("--- Compute sample density weight for sample points [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+		updateLast(2);
+		std::vector<FT> sample_density_weights;
 
-    current[2] = boost::posix_time::second_clock::local_time();
-    fmt::print("--- Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
-    updateLast(2);
-    for (sample_iter = sample_points.begin();
-         sample_iter != sample_points.end(); ++sample_iter)
-    {
-      if ((sample_iter - sample_points.begin()) % (sample_points.size() / 100) == 0) {
-        current[3] = boost::posix_time::second_clock::local_time();
-        fmt::print("----- Simplify and regularize [{}%] [{} :: {}]\n", ((sample_iter - sample_points.begin()) + 1) * 100 / sample_points.size(), boost::posix_time::to_simple_string(current[3]), boost::posix_time::to_simple_string(current[3] - last[3]));
-        updateLast(3);
-      }
-      FT density = simplify_and_regularize_internal::
-                   compute_density_weight_for_sample_point<Kernel, Kd_Tree>
-                   (*sample_iter, 
-                    sample_kd_tree, 
-                    radius);
+		current[2] = boost::posix_time::second_clock::local_time();
+		fmt::print("--- Simplify and regularize [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+		updateLast(2);
+		for (sample_iter = sample_points.begin();
+				 sample_iter != sample_points.end(); ++sample_iter)
+		{
+			if ((sample_iter - sample_points.begin()) % (sample_points.size() / 100) == 0) {
+				current[3] = boost::posix_time::second_clock::local_time();
+				fmt::print("----- Simplify and regularize [{}%] [{} :: {}]\n", ((sample_iter - sample_points.begin()) + 1) * 100 / sample_points.size(), boost::posix_time::to_simple_string(current[3]), boost::posix_time::to_simple_string(current[3] - last[3]));
+				updateLast(3);
+			}
+			FT density = simplify_and_regularize_internal::
+									 compute_density_weight_for_sample_point<Kernel, Kd_Tree>
+									 (*sample_iter, 
+										sample_kd_tree, 
+										radius);
 
-      sample_density_weights.push_back(density);
-    }
-    
+			sample_density_weights.push_back(density);
+		}
+		
 
-    typename std::vector<Point>::iterator update_iter = update_sample_points.begin();
+		typename std::vector<Point>::iterator update_iter = update_sample_points.begin();
 #ifndef CGAL_LINKED_WITH_TBB
-  CGAL_static_assertion_msg (!(boost::is_convertible<Concurrency_tag, Parallel_tag>::value),
-			     "Parallel_tag is enabled but TBB is unavailable.");
+	CGAL_static_assertion_msg (!(boost::is_convertible<Concurrency_tag, Parallel_tag>::value),
+					 "Parallel_tag is enabled but TBB is unavailable.");
 #else
-    //parallel
-    if (boost::is_convertible<Concurrency_tag, Parallel_tag>::value)
-    {
-      current[2] = boost::posix_time::second_clock::local_time();
-      fmt::print("--- Sample point updater [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
-      updateLast(2);
-      tbb::blocked_range<size_t> block(0, number_of_sample);
-      Sample_point_updater<Kernel, Kd_Tree, RandomAccessIterator> sample_updater(
-                           update_sample_points,
-                           sample_points,          
-                           original_kd_tree,
-                           sample_kd_tree,
-                           radius, 
-                           original_density_weights,
-                           sample_density_weights);
+		//parallel
+		if (boost::is_convertible<Concurrency_tag, Parallel_tag>::value)
+		{
+			current[2] = boost::posix_time::second_clock::local_time();
+			fmt::print("--- Sample point updater [{} :: {}]\n", boost::posix_time::to_simple_string(current[2]), boost::posix_time::to_simple_string(current[2]-last[2]));
+			updateLast(2);
+			tbb::blocked_range<size_t> block(0, number_of_sample);
+			Sample_point_updater<Kernel, Kd_Tree, RandomAccessIterator> sample_updater(
+													 update_sample_points,
+													 sample_points,          
+													 original_kd_tree,
+													 sample_kd_tree,
+													 radius, 
+													 original_density_weights,
+													 sample_density_weights);
 
-       tbb::parallel_for(block, sample_updater);
-    }else
+			 tbb::parallel_for(block, sample_updater);
+		}else
 #endif
-    {
-      //sequential
-      counter_ = 1;
-      for (sample_iter = sample_points.begin();
-        sample_iter != sample_points.end(); ++sample_iter, ++update_iter)
-      {
-        *update_iter = simplify_and_regularize_internal::
-          compute_update_sample_point<Kernel,
-                                      Kd_Tree,
-                                      RandomAccessIterator>
-                                      (*sample_iter,
-                                       original_kd_tree,
-                                       sample_kd_tree,
-                                       radius2,
-                                       original_density_weights,
-                                       sample_density_weights);
-      }
-    }
-    
-    sample_iter = sample_points.begin();
-    for (update_iter = update_sample_points.begin();
-         update_iter != update_sample_points.end();
-         ++update_iter, ++sample_iter)
-    {
-      *sample_iter = *update_iter;
-    }
-  }
+		{
+			//sequential
+			counter_ = 1;
+			for (sample_iter = sample_points.begin();
+				sample_iter != sample_points.end(); ++sample_iter, ++update_iter)
+			{
+				*update_iter = simplify_and_regularize_internal::
+					compute_update_sample_point<Kernel,
+																			Kd_Tree,
+																			RandomAccessIterator>
+																			(*sample_iter,
+																			 original_kd_tree,
+																			 sample_kd_tree,
+																			 radius2,
+																			 original_density_weights,
+																			 sample_density_weights);
+			}
+		}
+		
+		sample_iter = sample_points.begin();
+		for (update_iter = update_sample_points.begin();
+				 update_iter != update_sample_points.end();
+				 ++update_iter, ++sample_iter)
+		{
+			*sample_iter = *update_iter;
+		}
+	}
 
-  // final output
-  for(sample_iter = sample_points.begin(); 
-      sample_iter != sample_points.end(); ++sample_iter)
-  {
-    *output++ = *sample_iter;
-  }
+	// final output
+	for(sample_iter = sample_points.begin(); 
+			sample_iter != sample_points.end(); ++sample_iter)
+	{
+		*output++ = *sample_iter;
+	}
 
-  return output;
+	return output;
 }
 
 /// @cond SKIP_IN_MANUAL
 // This variant deduces the kernel from the iterator type.
 template <typename Concurrency_tag,
-          typename OutputIterator,     
-          typename RandomAccessIterator, 
-          typename PointPMap>
+					typename OutputIterator,     
+					typename RandomAccessIterator, 
+					typename PointPMap>
 OutputIterator 
 wlop_simplify_and_regularize_point_set(
-  RandomAccessIterator  first,  ///< iterator over the first input point
-  RandomAccessIterator  beyond, ///< past-the-end iterator
-  OutputIterator output,        ///< add back-inserter
-  PointPMap point_pmap, ///< property map RandomAccessIterator  -> Point_3
-  const double select_percentage,     ///< percentage of points to retain
-  double neighbor_radius,       ///< size of neighbors.
-  const unsigned int max_iter_number, ///< number of iterations.
-  const bool require_uniform_sampling     ///< if needed to compute density 
-                                      ///  to generate more rugularized result.                                 
+	RandomAccessIterator  first,  ///< iterator over the first input point
+	RandomAccessIterator  beyond, ///< past-the-end iterator
+	OutputIterator output,        ///< add back-inserter
+	PointPMap point_pmap, ///< property map RandomAccessIterator  -> Point_3
+	const double select_percentage,     ///< percentage of points to retain
+	double neighbor_radius,       ///< size of neighbors.
+	const unsigned int max_iter_number, ///< number of iterations.
+	const bool require_uniform_sampling     ///< if needed to compute density 
+																			///  to generate more rugularized result.                                 
 ) 
 {
-  typedef typename boost::property_traits<PointPMap>::value_type  Point;
-  typedef typename Kernel_traits<Point>::Kernel                   Kernel;
-  
-  return wlop_simplify_and_regularize_point_set<Concurrency_tag>(
-      first, beyond,
-      output,
-      point_pmap,
-      select_percentage,
-      neighbor_radius,
-      max_iter_number,
-      require_uniform_sampling,
-      Kernel());
+	typedef typename boost::property_traits<PointPMap>::value_type  Point;
+	typedef typename Kernel_traits<Point>::Kernel                   Kernel;
+	
+	return wlop_simplify_and_regularize_point_set<Concurrency_tag>(
+			first, beyond,
+			output,
+			point_pmap,
+			select_percentage,
+			neighbor_radius,
+			max_iter_number,
+			require_uniform_sampling,
+			Kernel());
 }
 /// @endcond
 
@@ -742,33 +743,34 @@ wlop_simplify_and_regularize_point_set(
 /// @cond SKIP_IN_MANUAL
 /// This variant creates a default point property map=Dereference_property_map.
 template <typename Concurrency_tag, 
-          typename OutputIterator,     
-          typename RandomAccessIterator >
+					typename OutputIterator,     
+					typename RandomAccessIterator >
 OutputIterator
 wlop_simplify_and_regularize_point_set(
-  RandomAccessIterator  first,  ///< iterator to the first input point.
-  RandomAccessIterator  beyond, ///< past-the-end iterator.
-  OutputIterator output,        ///< add back-inserter.
-  const double select_percentage = 5, ///< percentage of points to retain
-  double neighbor_radius = -1,  ///< size of neighbors.
-  const unsigned int max_iter_number = 35, ///< number of iterations.
-  const bool require_uniform_sampling = false ///< if needed to compute density   
-                                           ///to generate a more uniform result. 
+	RandomAccessIterator  first,  ///< iterator to the first input point.
+	RandomAccessIterator  beyond, ///< past-the-end iterator.
+	OutputIterator output,        ///< add back-inserter.
+	const double select_percentage = 5, ///< percentage of points to retain
+	double neighbor_radius = -1,  ///< size of neighbors.
+	const unsigned int max_iter_number = 35, ///< number of iterations.
+	const bool require_uniform_sampling = false ///< if needed to compute density   
+																					 ///to generate a more uniform result. 
 )
 {
-  return wlop_simplify_and_regularize_point_set<Concurrency_tag>(
-          first, beyond,
-          output,
-          make_identity_property_map(typename std::iterator_traits
-                                     <RandomAccessIterator >::
-                                     value_type()),
-          select_percentage, 
-          neighbor_radius, 
-          max_iter_number, 
-          require_uniform_sampling);
+	return wlop_simplify_and_regularize_point_set<Concurrency_tag>(
+					first, beyond,
+					output,
+					make_identity_property_map(typename std::iterator_traits
+																		 <RandomAccessIterator >::
+																		 value_type()),
+					select_percentage, 
+					neighbor_radius, 
+					max_iter_number, 
+					require_uniform_sampling);
 }
 /// @endcond
 
 } //namespace CGAL
 
 #endif // CLEST_WLOP_SIMPLIFY_VERBOSE_HPP
+#endif

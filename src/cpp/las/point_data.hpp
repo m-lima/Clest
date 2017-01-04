@@ -51,7 +51,10 @@ namespace las {
                   uint32_t z
 
 #define _PART_BASIC uint16_t intensity;\
-                    CombinedValues combinedValues;\
+                    uint8_t returnNumber : 3;\
+                    uint8_t numberOfReturns : 3;\
+                    bool scanDirectionFlag : 1;\
+                    bool edgeOfFight : 1;\
                     uint8_t classification;\
                     int8_t scanAngleRank;\
                     uint8_t userData;\
@@ -69,26 +72,6 @@ namespace las {
                    float zT
 
 #pragma pack(push, 1)
-  struct CombinedValues {
-    uint8_t data;
-
-    uint8_t getReturnNumber() {
-      return data >> 5;
-    }
-
-    uint8_t getNumberOfReturns() {
-      return (data >> 2) & 0b111;
-    }
-
-    bool getScanDirectionFlag() {
-      return (data & 0b10) != 0;
-    }
-
-    bool getEdgeOfFlight() {
-      return data & 1;
-    }
-  };
-
   template <int N>
   struct PointData;
 

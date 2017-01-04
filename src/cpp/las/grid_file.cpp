@@ -50,7 +50,7 @@ namespace grid {
     if (mHeader.sizeX == 0
         || mHeader.sizeY == 0
         || mHeader.sizeZ == 0) {
-      throw clest::Exception::build("The file {} seems to be corrupted\n", path);
+      throw clest::Exception::build("The file {} seems to be corrupted", path);
     }
 
     // Prepare the memory to receive the grid from the file
@@ -66,14 +66,23 @@ namespace grid {
   /// Converts the give LAS file into a grid
   /// The size of the grid will be `sizeX` * `sizeY` * `sizeZ`
   template<int N>
-  void GridFile::convert(const las::LASFile<N> & lasFile,
+  void GridFile::convert(las::LASFile<N> & lasFile,
                          uint16_t sizeX,
                          uint16_t sizeY,
                          uint16_t sizeZ
   ) {
 
-    if (!lasFile.isValid()) {
+    // Ensure all the data is laoded
+    if (!lasFile.isValidAndFullyLoaded()) {
+      if (!lasFile.isValid()) {
+        lasFile.loadHeaders();
+      }
+      lasFile.loadData();
 
+      if (!lasFile.isValidAndFullyLoaded()) {
+        throw clest::Exception::build("Could not load LAS file:\n{}",
+                                      lasFile.filePath);
+      }
     }
 
     // Check validity of the parameters
@@ -132,7 +141,7 @@ namespace grid {
   }
 
 #define __DECLARE_TEMPLATES(index)\
-  template void GridFile::convert(const las::LASFile<index> & lasFile,\
+  template void GridFile::convert(las::LASFile<index> & lasFile,\
                                   uint16_t sizeX,\
                                   uint16_t sizeY,\
                                   uint16_t sizeZ);

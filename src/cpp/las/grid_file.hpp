@@ -14,7 +14,7 @@ namespace grid {
       load(path);
     }
     template<int N>
-    GridFile(const las::LASFile<N> & lasFile,
+    GridFile(las::LASFile<N> & lasFile,
              uint16_t sizeX,
              uint16_t sizeY,
              uint16_t sizeZ) {
@@ -25,7 +25,7 @@ namespace grid {
     void load(const std::string & path);
 
     template<int N>
-    void convert(const las::LASFile<N> & lasFile,
+    void convert(las::LASFile<N> & lasFile,
                  uint16_t sizeX,
                  uint16_t sizeY,
                  uint16_t sizeZ);
