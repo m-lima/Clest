@@ -58,7 +58,7 @@ namespace grid {
     // No buffering being done. The vector is written directly
     fileStream.write(
       reinterpret_cast<const char*>(&mData[0]),
-      mData.size() * sizeof(uint32_t));
+      mData.size() * sizeof(uint16_t));
 
     fileStream.close();
 
@@ -82,8 +82,6 @@ namespace grid {
 
     // Check the integrity of the header
     if (mHeader.sizeX == 0
-    //if (mHeader.version == 0
-    //    || mHeader.sizeX == 0
         || mHeader.sizeY == 0
         || mHeader.sizeZ == 0) {
       auto message = fmt::format("The file {} seems to be corrupted\n", path);
@@ -96,7 +94,7 @@ namespace grid {
 
     // Load directly
     fileStream.read(reinterpret_cast<char*>(&mData[0]),
-                    mData.size() * sizeof(uint32_t));
+                    mData.size() * sizeof(uint16_t));
 
     fileStream.close();
   }
@@ -105,12 +103,9 @@ namespace grid {
   /// The size of the grid will be `sizeX` * `sizeY` * `sizeZ`
   template<int N>
   void GridFile::convert(const las::LASFile<N> & lasFile,
-                         unsigned short sizeX,
-                         unsigned short sizeY,
-                         unsigned short sizeZ
-                         //uint32_t sizeX,
-                         //uint32_t sizeY,
-                         //uint32_t sizeZ
+                         uint16_t sizeX,
+                         uint16_t sizeY,
+                         uint16_t sizeZ
   ) {
 
     // Check validity of the parameters
@@ -125,7 +120,6 @@ namespace grid {
     }
 
     // Update the header
-    //mHeader.version = 1;
     mHeader.sizeX = sizeX;
     mHeader.sizeY = sizeY;
     mHeader.sizeZ = sizeZ;
@@ -147,17 +141,17 @@ namespace grid {
       / (lasFile.publicHeader.zOffset);
 
     // Clear the data vector and preallocate the proper size
-    mData = std::vector<uint32_t>(sizeX * sizeY * sizeZ);
+    mData = std::vector<uint16_t>(sizeX * sizeY * sizeZ);
 
     // Iterate and increment the voxel values accordingly
-    uint32_t localX;
-    uint32_t localY;
-    uint32_t localZ;
-    uint64_t max = 0;
+    uint16_t localX;
+    uint16_t localY;
+    uint16_t localZ;
+    uint32_t max = 0;
     for (auto point : lasFile.pointData) {
-      localX = static_cast<uint32_t>((point.x - xOffset) / xStep);
-      localY = static_cast<uint32_t>((point.y - yOffset) / yStep);
-      localZ = static_cast<uint32_t>((point.z - zOffset) / zStep);
+      localX = static_cast<uint16_t>((point.x - xOffset) / xStep);
+      localY = static_cast<uint16_t>((point.y - yOffset) / yStep);
+      localZ = static_cast<uint16_t>((point.z - zOffset) / zStep);
 
       if (localX == sizeX) localX--;
       if (localY == sizeY) localY--;
@@ -168,14 +162,14 @@ namespace grid {
       }
     }
 
-    mHeader.maxValue = max > 0xFFFF ? 0xFFFF : static_cast<unsigned short>(max);
+    mHeader.maxValue = max > 0xFFFF ? 0xFFFF : static_cast<uint16_t>(max);
   }
 
 #define __DECLARE_TEMPLATES(index)\
   template void GridFile::convert(const las::LASFile<index> & lasFile,\
-                                  unsigned short sizeX,\
-                                  unsigned short sizeY,\
-                                  unsigned short sizeZ);
+                                  uint16_t sizeX,\
+                                  uint16_t sizeY,\
+                                  uint16_t sizeZ);
 
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)

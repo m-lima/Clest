@@ -15,9 +15,9 @@ namespace grid {
     }
     template<int N>
     GridFile(const las::LASFile<N> & lasFile,
-             unsigned short sizeX,
-             unsigned short sizeY,
-             unsigned short sizeZ) {
+             uint16_t sizeX,
+             uint16_t sizeY,
+             uint16_t sizeZ) {
       convert(lasFile, sizeX, sizeY, sizeZ);
     }
 
@@ -26,39 +26,32 @@ namespace grid {
 
     template<int N>
     void convert(const las::LASFile<N> & lasFile,
-                 //uint32_t sizeX,
-                 //uint32_t sizeY,
-                 //uint32_t sizeZ);
-                 unsigned short sizeX,
-                 unsigned short sizeY,
-                 unsigned short sizeZ);
+                 uint16_t sizeX,
+                 uint16_t sizeY,
+                 uint16_t sizeZ);
 
-    uint32_t sizeX() { return mHeader.sizeX; }
-    uint32_t sizeY() { return mHeader.sizeY; }
-    uint32_t sizeZ() { return mHeader.sizeZ; }
+    uint16_t sizeX() { return mHeader.sizeX; }
+    uint16_t sizeY() { return mHeader.sizeY; }
+    uint16_t sizeZ() { return mHeader.sizeZ; }
 
-    uint32_t & voxel(unsigned int x, unsigned int y, unsigned int z) {
+    uint16_t & voxel(unsigned int x, unsigned int y, unsigned int z) {
       return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];
     }
 
   private:
 #pragma pack(push, 1)
     struct GridHeader {
-      //uint8_t version;
-      //uint32_t sizeX;
-      //uint32_t sizeY;
-      //uint32_t sizeZ;
-      unsigned short sizeX;
-      unsigned short sizeY;
-      unsigned short sizeZ;
+      uint16_t sizeX;
+      uint16_t sizeY;
+      uint16_t sizeZ;
       double xFactor = 1;
       double yFactor = 1;
       double zFactor = 1;
-      unsigned short maxValue;
+      uint16_t maxValue;
     };
 #pragma pack(pop)
 
-    std::vector<uint32_t> mData;
+    std::vector<uint16_t> mData;
     GridHeader mHeader;
 
   };
