@@ -22,14 +22,18 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 if(WIN32)
 
   # Boost
+  MESSAGE(STATUS "Setting BOOST_ROOT: " "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
   set(BOOST_ROOT "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
 
   # CGAL
+  MESSAGE(STATUS "Setting CGAL_DIR: " "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
   set(CGAL_DIR "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
 
   # TBB
+  MESSAGE(STATUS "Setting ENV{TBB_ARCH_PLATFORM}: " "intel64/vc14")
+  MESSAGE(STATUS "Setting TBB_INSTALL_DIR: " "${ENV_HOME_DIR}/Lib/TBB/Current")
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
-  set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Lib/TBB/tbb2017_20160916oss")
+  set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Lib/TBB/Current")
 
 else()
   # set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
@@ -39,44 +43,42 @@ endif()
 ## Dependencies
 ##
 
+add_subdirectory(fmt)
+list(APPEND INCLUDE_DIRS fmt)
+list(APPEND LIBRARIES fmt)
+
 find_package(OPENCL REQUIRED)
 list(APPEND INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
 list(APPEND LIBRARIES ${OpenCL_LIBRARIES})
 message(STATUS "OpenCL Include: " "${OpenCL_INCLUDE_DIR}")
 message(STATUS "OpenCL Libraries: " "${OpenCL_LIBRARIES}")
 
-find_package(CGAL REQUIRED COMPONENTS CORE)
-include(${CGAL_USE_FILE})
-list(APPEND INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
-list(APPEND LIBRARIES ${CGAL_LIBRARIES})
-message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
-message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
+find_package(CGAL COMPONENTS CORE)
+if (CGAL_FOUND)
+  include(${CGAL_USE_FILE})
+  list(APPEND INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
+  list(APPEND LIBRARIES ${CGAL_LIBRARIES})
+  message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
+  message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
+endif()
 
-#set(Boost_USE_STATIC_LIBS ON)
-#find_package(Boost 1.62 REQUIRED)
-find_package(Boost 1.62 REQUIRED COMPONENTS date_time)
-list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
-list(APPEND LIBRARIES ${Boost_LIBRARIES})
-message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
-
-add_subdirectory(fmt)
-list(APPEND INCLUDE_DIRS fmt)
-list(APPEND LIBRARIES fmt)
+# set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost 1.62 COMPONENTS date_time)
+if (BOOST_FOUND)
+  list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
+  list(APPEND LIBRARIES ${Boost_LIBRARIES})
+  message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
+  message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
+endif()
 
 find_package(TBB REQUIRED)
-include(${TBB_USE_FILE})
-# include_directories ( ${TBB_INCLUDE_DIRS} )
-# link_directories( ${TBB_LIBRARY_DIRS} )
-# add_definitions( -DNOMINMAX -DCGAL_LINKED_WITH_TBB )
+if (CGAL_FOUND)
+  include(${TBB_USE_FILE})
+endif()
 list(APPEND INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
 list(APPEND LIBRARIES ${TBB_LIBRARIES})
 message(STATUS "TBB Include: " "${TBB_INCLUDE_DIRS}")
 message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
-
-# add_subdirectory(laslib)
-# list(APPEND INCLUDE_DIRS laslib)
-# list(APPEND LIBRARIES laslib)
 
 ##------------------------------------------------------------------------------
 ## LAS

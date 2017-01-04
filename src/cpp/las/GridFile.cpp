@@ -34,8 +34,9 @@ namespace grid {
       } while (counter < 20);
 
       if (counter == 20) {
-        throw std::runtime_error(
-          "Could not write to file. Too many copies exist");
+        auto message = fmt::format("Could not write to file. Too many copies exist");
+        fmt::print(stderr, message);
+        throw std::runtime_error(message);
       }
     }
 
@@ -43,8 +44,9 @@ namespace grid {
     std::ofstream fileStream(path, std::ofstream::binary);
 
     if (!fileStream.is_open()) {
-      throw std::runtime_error(
-        fmt::format("Could not open file {}", path));
+      auto message = fmt::format("Could not open file {}", path);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
 
     // Write the header. It is safe to const_cast because this will
@@ -70,7 +72,9 @@ namespace grid {
     std::ifstream fileStream(path, std::ifstream::binary);
 
     if (!fileStream.is_open()) {
-      throw std::runtime_error(fmt::format("Could not open file {}\n", path));
+      auto message = fmt::format("Could not open file {}\n", path);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
 
     // Read directly into the header variable
@@ -82,8 +86,9 @@ namespace grid {
     //    || mHeader.sizeX == 0
         || mHeader.sizeY == 0
         || mHeader.sizeZ == 0) {
-      throw std::runtime_error(
-        fmt::format("The file {} seems to be corrupted\n", path));
+      auto message = fmt::format("The file {} seems to be corrupted\n", path);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
 
     // Prepare the memory to receive the grid from the file
@@ -110,11 +115,13 @@ namespace grid {
 
     // Check validity of the parameters
     if (sizeX == 0 || sizeY == 0 || sizeZ == 0) {
-      throw std::runtime_error(fmt::format(
+      auto message = fmt::format(
         "The size [{}, {}, {}] is invalid and must be larger than zero",
         sizeX,
         sizeY,
-        sizeZ));
+        sizeZ);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
 
     // Update the header

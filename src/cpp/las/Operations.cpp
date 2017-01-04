@@ -49,14 +49,18 @@ namespace {
   void _validateLAS(const las::LASFile<N> & lasFile,
                     const std::string & action) {
     if (!lasFile.isValid()) {
-      throw std::runtime_error(fmt::format(
+      auto message = fmt::format(
         "Trying to {}, but {} seems to be corrupted",
-        action, lasFile.filePath));
+        action, lasFile.filePath);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
 
     if (lasFile.pointDataCount() < 1) {
-      throw std::runtime_error(fmt::format(
-        "Trying to {}, but {} seems to be empty", action, lasFile.filePath));
+      auto message = fmt::format(
+        "Trying to {}, but {} seems to be empty", action, lasFile.filePath);
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
   }
 
@@ -90,9 +94,11 @@ namespace {
 
       // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw
       if (BUFFER_SIZE < typeSize) {
-        throw std::runtime_error(
+        auto message = 
           fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})",
-          BUFFER_SIZE, typeSize));
+          BUFFER_SIZE, typeSize);
+        fmt::print(stderr, message);
+        throw std::runtime_error(message);
       }
 
       uint64_t currentPoint = 0;
@@ -103,8 +109,10 @@ namespace {
       std::ifstream fileStream(file.filePath,
                                std::ifstream::in | std::ifstream::binary);
       if (!fileStream.is_open()) {
-        throw std::runtime_error(
-          fmt::format("Could not open file {}", file.filePath));
+        auto message = 
+          fmt::format("Could not open file {}", file.filePath);
+        fmt::print(stderr, message);
+        throw std::runtime_error(message);
       }
 
       // Go to point data position
@@ -286,7 +294,9 @@ namespace las {
     // Factor should be greater than 0 and less or equal to 100
     // factor = (0 100]
     if (!(factor > 0.0 && factor <= 100.0)) {
-      throw std::runtime_error("Factor has to be from 0% to 100%");
+      auto message = "Factor has to be from 0% to 100%";
+      fmt::print(stderr, message);
+      throw std::runtime_error(message);
     }
     _validateLAS(lasFile, "simplify LAS");
 
