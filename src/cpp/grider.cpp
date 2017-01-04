@@ -1,6 +1,7 @@
 #ifdef MODE_GRIDER
 
-#include <fmt/ostream.h>
+#include <clest/util.hpp>
+#include <clest/ostream.hpp>
 
 #include "las/GridFile.hpp"
 
@@ -16,11 +17,20 @@ void createGrid(const std::string & path) {
 
 int main(int argc, char * argv[]) {
   grid::GridFile grid(argv[1]);
-  fmt::print("Size: {} {} {}\nMax: {}\n",
-             grid.sizeX(),
-             grid.sizeY(),
-             grid.sizeZ(),
-             grid.maxValue());
+  auto loadPath = clest::getCmdOption(argv, argv + argc, "-l");
+  if (loadPath) {
+    grid::GridFile grid(loadPath);
+    clest::println("Size: {} {} {}\nMax: {}",
+                   grid.sizeX(),
+                   grid.sizeY(),
+                   grid.sizeZ(),
+                   grid.maxValue());
+  } else {
+    auto convertPath = clest::getCmdOption(argv, argv + argc, "-c");
+    if (convertPath) {
+
+    }
+  }
 
   return 0;
 }

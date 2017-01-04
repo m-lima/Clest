@@ -1,22 +1,20 @@
 #include <fstream>
-#include <fmt/ostream.h>
 
 #include <clest/util.hpp>
+#include <clest/ostream.hpp>
 
 #include "GridFile.hpp"
 
 namespace grid {
 
   void GridFile::save(std::string path) const {
-    clest::util::guaranteeNewFile(path, "grid");
+    clest::guaranteeNewFile(path, "grid");
 
     // Prepare for writing
     std::ofstream fileStream(path, std::ofstream::binary);
 
     if (!fileStream.is_open()) {
-      auto message = fmt::format("Could not open file {}", path);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("Could not open file {}", path);
     }
 
     // Write the header. It is safe to const_cast because this will
@@ -42,9 +40,7 @@ namespace grid {
     std::ifstream fileStream(path, std::ifstream::binary);
 
     if (!fileStream.is_open()) {
-      auto message = fmt::format("Could not open file {}\n", path);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("Could not open file {}\n", path);
     }
 
     // Read directly into the header variable
@@ -54,9 +50,7 @@ namespace grid {
     if (mHeader.sizeX == 0
         || mHeader.sizeY == 0
         || mHeader.sizeZ == 0) {
-      auto message = fmt::format("The file {} seems to be corrupted\n", path);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("The file {} seems to be corrupted\n", path);
     }
 
     // Prepare the memory to receive the grid from the file
@@ -78,15 +72,17 @@ namespace grid {
                          uint16_t sizeZ
   ) {
 
+    if (!lasFile.isValid()) {
+
+    }
+
     // Check validity of the parameters
     if (sizeX == 0 || sizeY == 0 || sizeZ == 0) {
-      auto message = fmt::format(
+      throw clest::Exception::build(
         "The size [{}, {}, {}] is invalid and must be larger than zero",
         sizeX,
         sizeY,
         sizeZ);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
     }
 
     // Update the header

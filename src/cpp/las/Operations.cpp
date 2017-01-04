@@ -3,8 +3,9 @@
 #include "LASFile.hpp"
 #include "PointData.hpp"
 
+#include <clest/ostream.hpp>
+
 #include <vector>
-#include <fmt/format.h>
 
 #ifdef _CMAKE_TBB_FOUND
 #include <tbb/blocked_range.h>
@@ -50,18 +51,14 @@ namespace {
   void _validateLAS(const las::LASFile<N> & lasFile,
                     const std::string & action) {
     if (!lasFile.isValid()) {
-      auto message = fmt::format(
+      throw clest::Exception::build(
         "Trying to {}, but {} seems to be corrupted",
         action, lasFile.filePath);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
     }
 
     if (lasFile.pointDataCount() < 1) {
-      auto message = fmt::format(
+      throw clest::Exception::build(
         "Trying to {}, but {} seems to be empty", action, lasFile.filePath);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
     }
   }
 
@@ -95,11 +92,9 @@ namespace {
 
       // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw
       if (BUFFER_SIZE < typeSize) {
-        auto message = 
-          fmt::format("BUFFER_SIZE ({}) is too small to fit typeSize ({})",
+        throw clest::Exception::build(
+          "BUFFER_SIZE ({}) is too small to fit typeSize ({})",
           BUFFER_SIZE, typeSize);
-        fmt::print(stderr, message);
-        throw std::runtime_error(message);
       }
 
       uint64_t currentPoint = 0;
@@ -110,10 +105,7 @@ namespace {
       std::ifstream fileStream(file.filePath,
                                std::ifstream::in | std::ifstream::binary);
       if (!fileStream.is_open()) {
-        auto message = 
-          fmt::format("Could not open file {}", file.filePath);
-        fmt::print(stderr, message);
-        throw std::runtime_error(message);
+        throw clest::Exception::build("Could not open file {}", file.filePath);
       }
 
       // Go to point data position
@@ -304,9 +296,7 @@ namespace las {
     // Factor should be greater than 0 and less or equal to 100
     // factor = (0 100]
     if (!(factor > 0.0 && factor <= 100.0)) {
-      auto message = "Factor has to be from 0% to 100%";
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception("Factor has to be from 0% to 100%");
     }
     _validateLAS(lasFile, "simplify LAS");
 

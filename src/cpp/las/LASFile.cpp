@@ -1,8 +1,8 @@
 #include <string>
 #include <fstream>
-#include <fmt/ostream.h>
 
 #include <clest/util.hpp>
+#include <clest/ostream.hpp>
 
 #include "LASFile.hpp"
 
@@ -45,12 +45,10 @@ namespace {
 
     // If `BUFFER_SIZE` cannot hold a single `PointData<N>` element, throw 
     if (BUFFER_SIZE < typeSize) {
-       auto message =  fmt::format(
+       throw clest::Exception::build(
          "BUFFER_SIZE ({}) is too small to fit typeSize ({})",
          BUFFER_SIZE,
          typeSize);
-       fmt::print(stderr, message);
-       throw std::runtime_error(message);
     }
 
     // Clean up the container
@@ -120,9 +118,7 @@ namespace las {
     std::ifstream fileStream(filePath,
                              std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      auto message = fmt::format("Could not open file {}", filePath);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("Could not open file {}", filePath);
     }
 
     // Read directly into the variable
@@ -179,9 +175,7 @@ namespace las {
     std::ifstream fileStream(filePath,
                              std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open()) {
-      auto message = fmt::format("Could not open file {}", filePath);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("Could not open file {}", filePath);
     }
 
     // Go to the point where the point data starts
@@ -230,15 +224,13 @@ namespace las {
   /// will be added before attempting to add ".new"
   template<int N>
   void LASFile<N>::save(std::string file) const {
-    clest::util::guaranteeNewFile(file, "las");
+    clest::guaranteeNewFile(file, "las");
     
     // Prepare for writing
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
 
     if (!fileStream.is_open()) {
-      auto message = fmt::format("Could not open file {}", file);
-      fmt::print(stderr, message);
-      throw std::runtime_error(message);
+      throw clest::Exception::build("Could not open file {}", file);
     }
 
     // Write the public header directly, based on `headerSize`

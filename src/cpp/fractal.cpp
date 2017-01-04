@@ -3,7 +3,6 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
-#include <fmt/ostream.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>

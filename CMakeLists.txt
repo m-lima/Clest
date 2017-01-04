@@ -106,8 +106,9 @@ set(SOURCES
   ${CPP_SRC_DIR}/operator.cpp
   ${CPP_SRC_DIR}/grider.cpp
   ${CPP_SRC_DIR}/fractal.cpp
-  ${CPP_SRC_DIR}/lib/Clest/util.hpp
-  ${CPP_SRC_DIR}/lib/Clest/clUtil.hpp
+  ${CPP_SRC_DIR}/lib/clest/ostream.hpp
+  ${CPP_SRC_DIR}/lib/clest/util.hpp
+  ${CPP_SRC_DIR}/lib/clest/cl.hpp
   ${CPP_SRC_DIR}/las/PublicHeader.hpp
   ${CPP_SRC_DIR}/las/RecordHeader.hpp
   ${CPP_SRC_DIR}/las/PointData.hpp
