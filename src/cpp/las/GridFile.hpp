@@ -33,6 +33,7 @@ namespace grid {
     uint16_t sizeX() { return mHeader.sizeX; }
     uint16_t sizeY() { return mHeader.sizeY; }
     uint16_t sizeZ() { return mHeader.sizeZ; }
+    uint16_t maxValue() { return mHeader.maxValue; }
 
     uint16_t & voxel(unsigned int x, unsigned int y, unsigned int z) {
       return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];

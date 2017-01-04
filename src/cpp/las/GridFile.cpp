@@ -1,44 +1,14 @@
 #include <fstream>
 #include <fmt/ostream.h>
 
+#include <clest/util.hpp>
+
 #include "GridFile.hpp"
 
 namespace grid {
 
   void GridFile::save(std::string path) const {
-    // Check if the file exists
-    // Keep appending ".new" before the extension until the filename is unique
-    {
-      int counter = 0;
-      do {
-
-        // Try to read it
-        std::ifstream testFile(path);
-
-        // If it's not readable, it doesn't exits; Quit loop
-        if (!testFile.is_open()) {
-          break;
-        }
-
-        testFile.close();
-
-        // Find the extension
-        auto index = path.rfind(".grid");
-
-        // If it has no extension, first try adding an extension to it
-        if (index == std::string::npos) { path += ".grid"; }
-        // If it does, append ".new" before the extension
-        else { path = path.substr(0, index) + ".new.grid"; }
-
-        counter++;
-      } while (counter < 20);
-
-      if (counter == 20) {
-        auto message = fmt::format("Could not write to file. Too many copies exist");
-        fmt::print(stderr, message);
-        throw std::runtime_error(message);
-      }
-    }
+    clest::util::guaranteeNewFile(path, "grid");
 
     // Prepare for writing
     std::ofstream fileStream(path, std::ofstream::binary);

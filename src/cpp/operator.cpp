@@ -276,7 +276,7 @@ namespace {
   }
 }
 
-int main(int argc, char ** argv) {
+int main(int argc, char * argv[]) {
 
 #ifdef DEBUG
   fmt::print("Running in DEBUG mode\n");

@@ -1,21 +1,22 @@
-#ifdef MODE_OPERATOR
 #include "Operations.hpp"
-
-#include <vector>
-
-#include <fmt/format.h>
-
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_for.h>
-
-#include <CGAL/Simple_cartesian.h>
-//#include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include "WlopSimplifyVerbose.hpp"
 
 #include "LASFile.hpp"
 #include "PointData.hpp"
 
+#include <vector>
+#include <fmt/format.h>
+
+#ifdef _CMAKE_TBB_FOUND
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+#endif
+
+#ifdef _CMAKE_CGAL_FOUND
+#include <CGAL/Simple_cartesian.h>
+//#include <CGAL/wlop_simplify_and_regularize_point_set.h>
+#include "WlopSimplifyVerbose.hpp"
 using Point3 = CGAL::Simple_cartesian<double>::Point_3;
+#endif
 
 namespace {
 
@@ -139,8 +140,10 @@ namespace {
       // Close the stream
       fileStream.close();
 
-    } else { // Read from memory (in parallel)
+    } else { // Read from memory
 
+      // Parallelization enabled
+#ifdef _CMAKE_TBB_FOUND
       // Create blocks of memory to parallelize
       tbb::blocked_range<uint64_t> block(0, file.pointData.size());
 
@@ -150,6 +153,11 @@ namespace {
           func(file.pointData[i], i);
         }
       });
+#else
+      for (uint64_t i = 0; i < file.pointData.size(); ++i) {
+        func(file.pointData[i], i);
+      }
+#endif
     }
   }
 
@@ -169,6 +177,7 @@ namespace {
     return limits;
   }
 
+#ifdef _CMAKE_CGAL_FOUND
   /// Template full specialization for `Point3`
   /// since it uses a function to access the coordinates
   template<>
@@ -225,6 +234,7 @@ namespace {
       }
     }
   };
+#endif
 }
 
 namespace las {
@@ -361,6 +371,7 @@ namespace las {
     newFile.save();
   }
 
+#ifdef CGAL_LINKED_WITH_TBB
   /// Performs a weighted locally optimal projection of the
   /// point cloud by using CGAL's wlop
   template <int N>
@@ -436,7 +447,9 @@ namespace las {
 
     newFile.save();
   }
+#endif
 
+#ifdef CGAL_LINKED_WITH_TBB
 #define __DECLARE_TEMPLATES(index)\
   template void simplify(const LASFile<index> & lasFile, const double factor);\
   template void colorize(const LASFile<index> & lasFile);\
@@ -445,6 +458,11 @@ namespace las {
                              const double radius,\
                              const unsigned int iterations,\
                              const bool uniform);
+#else
+#define __DECLARE_TEMPLATES(index)\
+  template void simplify(const LASFile<index> & lasFile, const double factor);\
+  template void colorize(const LASFile<index> & lasFile);
+#endif
 
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)
@@ -454,4 +472,3 @@ namespace las {
 #undef __DECLARE_TEMPLATES
 
 }
-#endif

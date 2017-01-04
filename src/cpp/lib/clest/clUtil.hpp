@@ -1,52 +1,15 @@
-#pragma once
+﻿#pragma once
 
+#define __CL_ENABLE_EXCEPTIONS
+#include <CL/cl.hpp>
 #include <string>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <fmt/ostream.h>
 
-#include "las/PublicHeader.hpp"
-
 namespace clest {
   namespace util {
-    const std::string simplifyValue(double value) {
-      if (value < 1000) {
-        return fmt::format("{:d}", value);
-      }
-
-      value /= 1000.0;
-      if (value < 1000) {
-        return fmt::format("{:03.2f} thousand", value);
-      }
-
-      value /= 1000.0;
-      if (value < 1000) {
-        return fmt::format("{:03.2f} million", value);
-      }
-
-      value /= 1000.0;
-      if (value < 1000) {
-        return fmt::format("{:03.2f} billion", value);
-      }
-
-      value /= 1000.0;
-      if (value < 1000) {
-        return fmt::format("{:03.2f} trillion", value);
-      }
-
-      return "<invalid>";
-    }
-
-    bool isBigEndian() {
-      union {
-        uint32_t i;
-        char c[4];
-      } testValue = { 0x01020304 };
-
-      return testValue.c[0] == 1;
-    }
-
-    bool listAll() {
+    inline bool listAll() {
       fmt::print("Listing all platforms and devices..\n");
       try {
         std::vector<cl::Platform> platforms;
@@ -91,7 +54,7 @@ namespace clest {
       return true;
     }
 
-    std::string loadProgram(std::string input) {
+    inline std::string loadProgram(std::string input) {
       std::ifstream stream(input.c_str());
       if (!stream.is_open()) {
         fmt::print("Cannot open file: {}\n", input);
@@ -102,9 +65,9 @@ namespace clest {
                          std::istreambuf_iterator<char>());
     }
 
-    void populateDevices(std::vector<cl::Platform> * platforms,
-                         std::vector<cl::Device> * devices,
-                         cl_device_type deviceType) {
+    inline void populateDevices(std::vector<cl::Platform> * platforms,
+                                std::vector<cl::Device> * devices,
+                                cl_device_type deviceType) {
       for (auto platform = platforms->begin();
            devices->empty() && platform != platforms->end();
            platform++) {
@@ -133,7 +96,7 @@ namespace clest {
       }
     }
 
-    void printLongDeviceInfo(const cl::Device & device) {
+    inline void printLongDeviceInfo(const cl::Device & device) {
       fmt::print(
         "=========================|\n"
         "Name:                     {}\n"

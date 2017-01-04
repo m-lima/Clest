@@ -60,25 +60,37 @@ if (CGAL_FOUND)
   list(APPEND LIBRARIES ${CGAL_LIBRARIES})
   message(STATUS "CGAL Include: " "${CGAL_INCLUDE_DIRS}")
   message(STATUS "CGAL Libraries: " "${CGAL_LIBRARIES}")
+else()
+  MESSAGE(STATUS "Skipping CGAL..")
 endif()
 
 # set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.62 COMPONENTS date_time)
-if (BOOST_FOUND)
+find_package(Boost 1.62 OPTIONAL_COMPONENTS date_time)
+if (NOT Boost_FOUND)
+  MESSAGE(STATUS "Skipping BOOST Components and trying header-only..")
+  find_package(Boost 1.62)
+endif()
+if (Boost_FOUND)
   list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
   list(APPEND LIBRARIES ${Boost_LIBRARIES})
   message(STATUS "Boost Include: " "${Boost_INCLUDE_DIRS}")
   message(STATUS "Boost Libraries: " "${Boost_LIBRARIES}")
+else()
+  MESSAGE(STATUS "Skipping BOOST..")
 endif()
 
-find_package(TBB REQUIRED)
-if (CGAL_FOUND)
-  include(${TBB_USE_FILE})
+find_package(TBB)
+if (TBB_FOUND)
+  if (CGAL_FOUND)
+    include(${TBB_USE_FILE})
+  endif()
+  list(APPEND INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
+  list(APPEND LIBRARIES ${TBB_LIBRARIES})
+  message(STATUS "TBB Include: " "${TBB_INCLUDE_DIRS}")
+  message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
+else()
+  MESSAGE(STATUS "Skipping TBB..")
 endif()
-list(APPEND INCLUDE_DIRS ${TBB_INCLUDE_DIRS})
-list(APPEND LIBRARIES ${TBB_LIBRARIES})
-message(STATUS "TBB Include: " "${TBB_INCLUDE_DIRS}")
-message(STATUS "TBB Libraries: " "${TBB_LIBRARIES}")
 
 ##------------------------------------------------------------------------------
 ## LAS
@@ -94,7 +106,8 @@ set(SOURCES
   ${CPP_SRC_DIR}/operator.cpp
   ${CPP_SRC_DIR}/grider.cpp
   ${CPP_SRC_DIR}/fractal.cpp
-  ${CPP_SRC_DIR}/util.hpp
+  ${CPP_SRC_DIR}/lib/Clest/util.hpp
+  ${CPP_SRC_DIR}/lib/Clest/clUtil.hpp
   ${CPP_SRC_DIR}/las/PublicHeader.hpp
   ${CPP_SRC_DIR}/las/RecordHeader.hpp
   ${CPP_SRC_DIR}/las/PointData.hpp
@@ -138,8 +151,18 @@ add_executable(clest ${SOURCES})
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 target_link_libraries(clest ${LIBRARIES})
 target_include_directories(clest PRIVATE ${INCLUDE_DIRS})
+target_include_directories(clest PRIVATE ${CPP_SRC_DIR}/lib)
 set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
 add_dependencies(clest always)
+if (CGAL_FOUND)
+  add_definitions(-D_CMAKE_CGAL_FOUND)
+endif()
+if (Boost_FOUND)
+  add_definitions(-D_CMAKE_BOOST_FOUND)
+endif()
+if (TBB_FOUND)
+  add_definitions(-D_CMAKE_TBB_FOUND)
+endif()
 add_definitions(-DMODE_GRIDER)
 
 ##------------------------------------------------------------------------------
