@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "LASFile.hpp"
+#include "las_file.hpp"
 
 namespace grid {
 

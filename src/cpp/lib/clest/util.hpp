@@ -50,9 +50,9 @@ namespace clest {
     return testValue.c[0] == 1;
   }
 
-  inline char * getCmdOption(char * begin[],
-                             char * end[],
-                             const std::string & option) {
+  inline char * extractOption(char * begin[],
+                              char * end[],
+                              const std::string & option) {
     char ** itr = std::find(begin, end, option);
     if (itr != end && ++itr != end) {
       return *itr;
@@ -60,7 +60,7 @@ namespace clest {
     return 0;
   }
 
-  inline bool cmdOptionExists(char * begin[],
+  inline bool findOption(char * begin[],
                               char * end[],
                               const std::string& option) {
     return std::find(begin, end, option) != end;

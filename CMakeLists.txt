@@ -106,19 +106,29 @@ set(SOURCES
   ${CPP_SRC_DIR}/operator.cpp
   ${CPP_SRC_DIR}/grider.cpp
   ${CPP_SRC_DIR}/fractal.cpp
+  )
+
+set(LAS_CPP
+  ${CPP_SRC_DIR}/las/las_file.cpp
+  ${CPP_SRC_DIR}/las/grid_file.cpp
+  ${CPP_SRC_DIR}/las/operations.cpp
+  )
+
+set(LAS_HPP
+  ${CPP_SRC_DIR}/las/public_header.hpp
+  ${CPP_SRC_DIR}/las/record_header.hpp
+  ${CPP_SRC_DIR}/las/point_data.hpp
+  ${CPP_SRC_DIR}/las/las_file.hpp
+  ${CPP_SRC_DIR}/las/grid_file.hpp
+  ${CPP_SRC_DIR}/las/operations.hpp
+  ${CPP_SRC_DIR}/las/wlop_simplify_verbose.hpp
+  )
+
+set(LIB_HPP
   ${CPP_SRC_DIR}/lib/clest/ostream.hpp
   ${CPP_SRC_DIR}/lib/clest/util.hpp
   ${CPP_SRC_DIR}/lib/clest/cl.hpp
-  ${CPP_SRC_DIR}/las/PublicHeader.hpp
-  ${CPP_SRC_DIR}/las/RecordHeader.hpp
-  ${CPP_SRC_DIR}/las/PointData.hpp
-  ${CPP_SRC_DIR}/las/GridFile.hpp
-  ${CPP_SRC_DIR}/las/GridFile.cpp
-  ${CPP_SRC_DIR}/las/LASFile.hpp
-  ${CPP_SRC_DIR}/las/LASFile.cpp
-  ${CPP_SRC_DIR}/las/Operations.hpp
-  ${CPP_SRC_DIR}/las/Operations.cpp
-  ${CPP_SRC_DIR}/las/WlopSimplifyVerbose.hpp
+  ${CPP_SRC_DIR}/lib/clest/las.hpp
   )
 
 set(OPENCL_SRC
@@ -127,6 +137,9 @@ set(OPENCL_SRC
   )
 
 if(MSVC)
+  list(APPEND SOURCES ${LAS_CPP})
+  list(APPEND SOURCES ${LAS_HPP})
+  list(APPEND SOURCES ${LIB_HPP})
   list(APPEND SOURCES ${OPENCL_SRC})
 endif()
 
@@ -171,6 +184,9 @@ add_definitions(-DMODE_GRIDER)
 ##
 
 if(MSVC)
+  source_group("Source Files\\Las" FILES ${LAS_CPP})
+  source_group("Header Files\\Las" FILES ${LAS_HPP})
+  source_group("Header Files\\Libs" FILES ${LIB_HPP})
   source_group("OpenCL" FILES ${OPENCL_SRC})
 
   if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.5)

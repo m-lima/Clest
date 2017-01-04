@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "PublicHeader.hpp"
-#include "RecordHeader.hpp"
-#include "PointData.hpp"
+#include "public_header.hpp"
+#include "record_header.hpp"
+#include "point_data.hpp"
 
 namespace las {
 

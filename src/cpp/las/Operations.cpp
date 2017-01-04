@@ -1,7 +1,7 @@
-#include "Operations.hpp"
+#include "operations.hpp"
 
-#include "LASFile.hpp"
-#include "PointData.hpp"
+#include "las_file.hpp"
+#include "point_data.hpp"
 
 #include <clest/ostream.hpp>
 

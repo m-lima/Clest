@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LASFile.hpp"
+#include "las_file.hpp"
 
 namespace las {
   template <int N>

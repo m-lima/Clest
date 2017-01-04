@@ -3,7 +3,7 @@
 #include <clest/util.hpp>
 #include <clest/ostream.hpp>
 
-#include "GridFile.hpp"
+#include "grid_file.hpp"
 
 namespace grid {
 

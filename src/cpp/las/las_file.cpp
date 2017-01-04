@@ -4,7 +4,7 @@
 #include <clest/util.hpp>
 #include <clest/ostream.hpp>
 
-#include "LASFile.hpp"
+#include "las_file.hpp"
 
 namespace {
 

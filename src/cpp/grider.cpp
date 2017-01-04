@@ -3,7 +3,7 @@
 #include <clest/util.hpp>
 #include <clest/ostream.hpp>
 
-#include "las/GridFile.hpp"
+#include "las/grid_file.hpp"
 
 template <int N = -1>
 void createGrid(const std::string & path) {
@@ -17,7 +17,7 @@ void createGrid(const std::string & path) {
 
 int main(int argc, char * argv[]) {
   grid::GridFile grid(argv[1]);
-  auto loadPath = clest::getCmdOption(argv, argv + argc, "-l");
+  auto loadPath = clest::extractOption(argv, argv + argc, "-l");
   if (loadPath) {
     grid::GridFile grid(loadPath);
     clest::println("Size: {} {} {}\nMax: {}",
@@ -26,7 +26,7 @@ int main(int argc, char * argv[]) {
                    grid.sizeZ(),
                    grid.maxValue());
   } else {
-    auto convertPath = clest::getCmdOption(argv, argv + argc, "-c");
+    auto convertPath = clest::extractOption(argv, argv + argc, "-c");
     if (convertPath) {
 
     }
