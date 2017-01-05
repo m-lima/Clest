@@ -2,6 +2,7 @@
 #include <clest/ostream.hpp>
 
 #include "las/grid_file.hpp"
+#include "lewiner/MarchingCubes.h"
 
 /// Create a grid based on a LASFile
 /// It loads the proper `LASFile<N>` at compile time to speed up the loading,
@@ -47,6 +48,70 @@ grid::GridFile loadGrid(const std::string & path) noexcept {
   }
 }
 
+int extractType(char * typeParam, char * convertPath) {
+  int type = -1;
+  if (typeParam) {
+    try {
+      type = std::stoi(typeParam);
+      clest::println("Type specified as: {}", type);
+    } catch (...) {
+      clest::println(stderr, "Invalid type value [{}]\nUsing default -1");
+    }
+  } else {
+    clest::println("No type given. Auto-detecting native type");
+    las::LASFile<-1> dummyLas(convertPath);
+    dummyLas.loadHeaders();
+    type = dummyLas.publicHeader.pointDataRecordFormat;
+    clest::println("Type auto-detected as: {}", type);
+  }
+
+  return type;
+}
+
+unsigned short extractSize(char * sizeParam, char axis) {
+  unsigned size;
+  try {
+    size = std::stoi(sizeParam);
+    if (size <= 0) {
+      clest::println(stderr,
+                     "Size of {} has to be greater than zero: {}\n"
+                     "Reverting to 256",
+                     axis,
+                     sizeParam);
+      size = 256;
+    }
+  } catch (...) {
+    clest::println(stderr,
+                   "Invalid value for {} size: {}\nReverting to 256",
+                   axis,
+                   sizeParam);
+    size = 256;
+  }
+  clest::println("Using {} size of: {}", axis, size);
+  return size;
+}
+
+void performMarchingCubes(grid::GridFile & grid,
+                          const char const * path) {
+  MarchingCubes marchingCubes;
+  marchingCubes.set_resolution(grid.sizeX(), grid.sizeY(), grid.sizeZ());
+  marchingCubes.init_all();
+
+  for (int i = 0; i < grid.sizeX(); ++i) {
+    for (int j = 0; j < grid.sizeX(); ++j) {
+      for (int k = 0; k < grid.sizeX(); ++k) {
+        marchingCubes.set_data(grid.voxel(i, j, k), i, j, k);
+      }
+    }
+  }
+  marchingCubes.run();
+
+  marchingCubes.clean_temps();
+  marchingCubes.writePLY(path);
+
+  marchingCubes.clean_all();
+}
+
 int main(int argc, char * argv[]) {
 
   // Load from an existing grid
@@ -66,6 +131,9 @@ int main(int argc, char * argv[]) {
                      grid.sizeY(),
                      grid.sizeZ(),
                      grid.maxValue());
+      
+      performMarchingCubes(grid,
+                           fmt::format("{}.{}", loadPath, ".ply").c_str());
 
     // Load switch was used, but no file was given
     } else {
@@ -84,30 +152,14 @@ int main(int argc, char * argv[]) {
       auto yParam = clest::extractOption(argv, argv + argc, "-y");
       auto zParam = clest::extractOption(argv, argv + argc, "-z");
 
-      // Preparing default values for grid conversion
-      int type = -1;
-      unsigned short sizeX = 256;
-      unsigned short sizeY = 256;
-      unsigned short sizeZ = 256;
+      int type = extractType(typeParam, convertPath);
+      unsigned short sizeX = extractSize(xParam, 'X');
+      unsigned short sizeY = extractSize(yParam, 'Y');
+      unsigned short sizeZ = extractSize(zParam, 'Z');
 
-      if (typeParam) {
-        try {
-          type = std::stoi(typeParam);
-          clest::println("Type specified as: {}", type);
-        } catch (...) {
-          clest::println(stderr, "Invalid type value [{}]\mUsing default -1");
-        }        
-      } else {
-        clest::println("No type given. Auto-detecting native type");
-        las::LASFile<-1> dummyLas(convertPath);
-        dummyLas.loadHeaders();
-        type = dummyLas.publicHeader.pointDataRecordFormat;
-        clest::println("Type auto-detected as: {}", type);
-      }
-
-
-
-      auto grid = createGrid(convertPath, type);
+      auto grid = createGrid(convertPath, type, sizeX, sizeY, sizeZ);
+      performMarchingCubes(grid,
+                           fmt::format("{}.{}", convertPath, ".ply").c_str());
 
     // Covert switch was used, but no file was given
     } else {

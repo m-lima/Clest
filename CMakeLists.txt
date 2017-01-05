@@ -118,12 +118,12 @@ set(START_SRC
   ${CPP_SRC_DIR}/fractal.cpp
   )
 
-set(LAS_CPP
+set(LAS_SRC
   ${CPP_SRC_DIR}/las/las_file.cpp
   ${CPP_SRC_DIR}/las/grid_file.cpp
-  ${CPP_SRC_DIR}/las/operations.cpp
+  ${CPP_SRC_DIR}/las/las_operations.cpp
   )
-list(APPEND SOURCES ${LAS_CPP})
+list(APPEND SOURCES ${LAS_SRC})
 
 set(LAS_HPP
   ${CPP_SRC_DIR}/las/public_header.hpp
@@ -131,7 +131,7 @@ set(LAS_HPP
   ${CPP_SRC_DIR}/las/point_data.hpp
   ${CPP_SRC_DIR}/las/las_file.hpp
   ${CPP_SRC_DIR}/las/grid_file.hpp
-  ${CPP_SRC_DIR}/las/operations.hpp
+  ${CPP_SRC_DIR}/las/las_operations.hpp
   ${CPP_SRC_DIR}/las/wlop_simplify_verbose.hpp
   )
 
@@ -142,9 +142,22 @@ set(LIB_HPP
   ${CPP_SRC_DIR}/lib/clest/las.hpp
   )
 
+set(LEWINER_SRC
+  ${CPP_SRC_DIR}/lewiner/MarchingCubes.cpp
+  ${CPP_SRC_DIR}/lewiner/ply.c
+  )
+list(APPEND SOURCES ${LEWINER_SRC})
+
+set(LEWINER_HPP
+  ${CPP_SRC_DIR}/lewiner/MarchingCubes.h
+  ${CPP_SRC_DIR}/lewiner/ply.h
+  ${CPP_SRC_DIR}/lewiner/LookUpTable.h
+  )
+
 set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/fractal.cl
   ${OPENCL_SRC_DIR}/lop.cl
+  ${OPENCL_SRC_DIR}/marching.cl
   )
 
 if(MSVC)
@@ -153,6 +166,7 @@ if(MSVC)
   list(APPEND SOURCES ${START_SRC})
   list(APPEND SOURCES ${LAS_HPP})
   list(APPEND SOURCES ${LIB_HPP})
+  list(APPEND SOURCES ${LEWINER_HPP})
   list(APPEND SOURCES ${OPENCL_SRC})
 
   # Tell CMake to, even though these files are being added to the source,
@@ -160,6 +174,7 @@ if(MSVC)
   set_source_files_properties(${START_SRC} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${LAS_HPP} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${LIB_HPP} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${LEWINER_HPP} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${OPENCL_SRC} PROPERTIES HEADER_FILE_ONLY true)
 endif()
 
@@ -215,8 +230,10 @@ endif()
 if(MSVC)
 
   # Folder organization within MSVC
-  source_group("Source Files\\Las" FILES ${LAS_CPP})
+  source_group("Source Files\\Las" FILES ${LAS_SRC})
   source_group("Header Files\\Las" FILES ${LAS_HPP})
+  source_group("Source Files\\Lewiner" FILES ${LEWINER_SRC})
+  source_group("Header Files\\Lewiner" FILES ${LEWINER_HPP})
   source_group("Header Files\\Libs" FILES ${LIB_HPP})
   source_group("OpenCL" FILES ${OPENCL_SRC})
 

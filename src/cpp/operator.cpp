@@ -6,7 +6,7 @@
 #include <clest/util.hpp>
 
 #include "las/las_file.hpp"
-#include "las/operations.hpp"
+#include "las/las_operations.hpp"
 
 #ifdef _WIN32
 // Force high performance GPU

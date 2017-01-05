@@ -1,4 +1,4 @@
-#include "operations.hpp"
+#include "las_operations.hpp"
 
 #include "las_file.hpp"
 #include "point_data.hpp"
@@ -15,7 +15,7 @@
 #ifdef _CMAKE_CGAL_FOUND
 #include <CGAL/Simple_cartesian.h>
 //#include <CGAL/wlop_simplify_and_regularize_point_set.h>
-#include "WlopSimplifyVerbose.hpp"
+#include "wlop_simplify_verbose.hpp"
 using Point3 = CGAL::Simple_cartesian<double>::Point_3;
 #endif
 
