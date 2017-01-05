@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.2)
 project(Clest CXX)
 
+# Current state
+if (WIN32)
+  message(STATUS "WIN32")
+endif()
+if (MSVC)
+  message(STATUS "MSVC")
+endif()
+if (APPLE)
+  message(STATUS "APPLE")
+endif()
+
 # Handle Mac's Clang
 if(APPLE)
   set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
@@ -23,16 +34,16 @@ list (APPEND INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/lib/include")
 if(WIN32)
 
   # Boost
-  MESSAGE(STATUS "Setting BOOST_ROOT: " "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
+  message(STATUS "Setting BOOST_ROOT: " "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
   set(BOOST_ROOT "${ENV_HOME_DIR}/Lib/Boost/boost_1_62_0")
 
   # CGAL
-  MESSAGE(STATUS "Setting CGAL_DIR: " "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
+  message(STATUS "Setting CGAL_DIR: " "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
   set(CGAL_DIR "${ENV_HOME_DIR}/Lib/CGAL/CGAL-4.9/build")
 
   # TBB
-  MESSAGE(STATUS "Setting ENV{TBB_ARCH_PLATFORM}: " "intel64/vc14")
-  MESSAGE(STATUS "Setting TBB_INSTALL_DIR: " "${ENV_HOME_DIR}/Lib/TBB/Current")
+  message(STATUS "Setting ENV{TBB_ARCH_PLATFORM}: " "intel64/vc14")
+  message(STATUS "Setting TBB_INSTALL_DIR: " "${ENV_HOME_DIR}/Lib/TBB/Current")
   set(ENV{TBB_ARCH_PLATFORM} "intel64/vc14")
   set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Lib/TBB/Current")
 

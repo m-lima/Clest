@@ -5,6 +5,9 @@ deliverable/
 # Vim
 *.swp
 
+# Visual Studio
+.vs/
+
 # Netbeans
 nbproject/
 
