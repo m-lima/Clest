@@ -107,6 +107,7 @@ namespace clest {
       "Max clock frequency:      {}Hz\n"
       "Max compute units:        {}\n"
       "Max work group size:      {}\n"
+      "Extensions:               {}\n"
       "=========================|\n",
       device.getInfo<CL_DEVICE_NAME>(),
       device.getInfo<CL_DRIVER_VERSION>(),
@@ -115,7 +116,8 @@ namespace clest {
       device.getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>(),
       device.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(),
       device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>(),
-      device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>()
+      device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(),
+      device.getInfo<CL_DEVICE_EXTENSIONS>()
     );
   }
 }

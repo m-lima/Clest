@@ -142,6 +142,15 @@ set(LIB_HPP
   ${CPP_SRC_DIR}/lib/clest/las.hpp
   )
 
+set(MESH_SRC
+  ${CPP_SRC_DIR}/mesh/cube_marcher.cpp
+  )
+list(APPEND SOURCES ${MESH_SRC})
+
+set(MESH_HPP
+  ${CPP_SRC_DIR}/mesh/cube_marcher.hpp
+  )
+
 set(LEWINER_SRC
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.cpp
   ${CPP_SRC_DIR}/lewiner/ply.c
@@ -152,6 +161,15 @@ set(LEWINER_HPP
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.h
   ${CPP_SRC_DIR}/lewiner/ply.h
   ${CPP_SRC_DIR}/lewiner/LookUpTable.h
+  )
+
+set(CL_SRC
+  ${CPP_SRC_DIR}/cl/cl_runner.cpp
+  )
+list(APPEND SOURCES ${CL_SRC})
+
+set(CL_HPP
+  ${CPP_SRC_DIR}/cl/cl_runner.hpp
   )
 
 set(OPENCL_SRC
@@ -166,7 +184,9 @@ if(MSVC)
   list(APPEND SOURCES ${START_SRC})
   list(APPEND SOURCES ${LAS_HPP})
   list(APPEND SOURCES ${LIB_HPP})
+  list(APPEND SOURCES ${MESH_HPP})
   list(APPEND SOURCES ${LEWINER_HPP})
+  list(APPEND SOURCES ${CL_HPP})
   list(APPEND SOURCES ${OPENCL_SRC})
 
   # Tell CMake to, even though these files are being added to the source,
@@ -174,7 +194,9 @@ if(MSVC)
   set_source_files_properties(${START_SRC} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${LAS_HPP} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${LIB_HPP} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${MESH_HPP} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${LEWINER_HPP} PROPERTIES HEADER_FILE_ONLY true)
+  set_source_files_properties(${CL_HPP} PROPERTIES HEADER_FILE_ONLY true)
   set_source_files_properties(${OPENCL_SRC} PROPERTIES HEADER_FILE_ONLY true)
 endif()
 
@@ -232,8 +254,12 @@ if(MSVC)
   # Folder organization within MSVC
   source_group("Source Files\\Las" FILES ${LAS_SRC})
   source_group("Header Files\\Las" FILES ${LAS_HPP})
+  source_group("Source Files\\Mesh" FILES ${MESH_SRC})
+  source_group("Header Files\\Mesh" FILES ${MESH_HPP})
   source_group("Source Files\\Lewiner" FILES ${LEWINER_SRC})
   source_group("Header Files\\Lewiner" FILES ${LEWINER_HPP})
+  source_group("Source Files\\OpenCL" FILES ${CL_SRC})
+  source_group("Header Files\\OpenCL" FILES ${CL_HPP})
   source_group("Header Files\\Libs" FILES ${LIB_HPP})
   source_group("OpenCL" FILES ${OPENCL_SRC})
 

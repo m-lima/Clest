@@ -5,6 +5,8 @@
 
 #include "las/grid_file.hpp"
 #include "lewiner/MarchingCubes.h"
+#include "mesh/cube_marcher.hpp"
+#include "cl/cl_runner.hpp"
 
 /// Create a grid based on a LASFile
 /// It loads the proper `LASFile<N>` at compile time to speed up the loading,
@@ -100,10 +102,9 @@ unsigned short extractSize(char * sizeParam, char axis) {
 }
 
 grid::GridFile getGrid(int argc, char * argv[]) {
-
   // Load from an existing grid
   if (clest::findOption(argv, argv + argc, "-l")) {
-    clest::println("Load flag found. Ignoring all other flags");
+    clest::println("Load flag found. Ignoring all conversion flags");
 
     auto loadPath = clest::extractOption(argv, argv + argc, "-l");
     if (loadPath) {
@@ -137,7 +138,29 @@ grid::GridFile getGrid(int argc, char * argv[]) {
       unsigned short sizeZ = extractSize(zParam, 'Z');
 
       clest::println("Creating grid..");
-      return convertGrid(convertPath, type, sizeX, sizeY, sizeZ);
+
+      auto grid = convertGrid(convertPath, type, sizeX, sizeY, sizeZ);
+
+      // Save grid
+      if (clest::findOption(argv, argv + argc, "-s")) {
+        clest::println("Saving grid");
+
+        auto savePath = clest::extractOption(argv, argv + argc, "-s");
+        if (savePath && savePath[0] != '-') {
+          clest::println("Saving as the given name:\n{}", savePath);
+          grid.save(savePath);
+        } else {
+          savePath = clest::extractOption(argv, argv + argc, "-l");
+          if (!savePath) {
+            savePath = clest::extractOption(argv, argv + argc, "-c");
+          }
+
+          clest::println("Saving as the automatic name:\n{}.grid", savePath);
+          grid.save(fmt::format("{}.grid", savePath));
+        }
+      }
+
+      return grid;
 
     // Covert switch was used, but no file was given
     } else {
@@ -153,7 +176,8 @@ grid::GridFile getGrid(int argc, char * argv[]) {
 }
 
 void performMarchingCubes(grid::GridFile & grid,
-                          const char * const path) {
+                          const char * const path,
+                          float threshold) {
   MarchingCubes marchingCubes;
   marchingCubes.set_resolution(grid.sizeX(), grid.sizeY(), grid.sizeZ());
   marchingCubes.init_all();
@@ -169,7 +193,7 @@ void performMarchingCubes(grid::GridFile & grid,
       }
     }
   }
-  marchingCubes.run(grid.maxValue() * 0.5f);
+  marchingCubes.run(grid.maxValue() * threshold);
 
   marchingCubes.clean_temps();
   marchingCubes.writePLY(path);
@@ -178,47 +202,62 @@ void performMarchingCubes(grid::GridFile & grid,
 }
 
 int main(int argc, char * argv[]) {
-  
-  auto grid = getGrid(argc, argv);
 
-  // Save grid
-  if (clest::findOption(argv, argv + argc, "-s")) {
-    clest::println("Saving grid");
-
-    auto savePath = clest::extractOption(argv, argv + argc, "-s");
-    if (savePath && savePath[0] != '-') {
-      clest::println("Saving as the given name:\n{}", savePath);
-      grid.save(savePath);
-    } else {
-      savePath = clest::extractOption(argv, argv + argc, "-l");
-      if (!savePath) {
-        savePath = clest::extractOption(argv, argv + argc, "-c");
-      }
-        
-      clest::println("Saving as the automatic name:\n{}.grid", savePath);
-      grid.save(fmt::format("{}.grid", savePath));
-    }
+  clest::println("== Parameters ===============");
+  for (int i = 1; i < argc; ++i) {
+    clest::println(argv[i]);
   }
+  clest::println("=============================");
+  
+  clest::ClRunner::printFull();
+  clest::ClRunner ocl(CL_DEVICE_TYPE_GPU, { "fp64" });
+
+  auto grid = getGrid(argc, argv);
 
   // March grid
   if (clest::findOption(argv, argv + argc, "-m")) {
     clest::println("Marching the grid..");
 
+    auto dividerParam = clest::extractOption(argv, argv + argc, "-d");
+    float divider = 0.5f;
+    if (dividerParam) {
+      try {
+        int dividerPercentage = std::stoi(dividerParam);
+        if (dividerPercentage <= 0 || dividerPercentage >= 100) {
+          clest::println(stderr,
+                         "The divider parameters must be an integer "
+                         "greater than 0% and less than 100%\n"
+                         "Reverting to 50%");
+        } else {
+          divider = dividerPercentage / 100.0f;
+        }
+      } catch (...) {
+        clest::println(stderr,
+                       "The divider parameters must be an integer "
+                       "greater than 0% and less than 100%\n"
+                       "Reverting to 50%");
+      }
+    }
+
     auto savePath = clest::extractOption(argv, argv + argc, "-m");
-    if (savePath) {
+    if (savePath && savePath[0] != '-') {
       clest::println("Saving the mesh as the given name:\n{}", savePath);
-      performMarchingCubes(grid, savePath);
+      performMarchingCubes(grid, savePath, divider);
     } else {
       savePath = clest::extractOption(argv, argv + argc, "-l");
       if (!savePath) {
         savePath = clest::extractOption(argv, argv + argc, "-c");
       }
 
-      clest::println("Saving the mesh as the automatic name:\n{}.ply", savePath);
-      performMarchingCubes(grid, fmt::format("{}.ply", savePath).c_str());
+      clest::println("Saving the mesh as the automatic name:\n{}.ply",
+                     savePath);
+      performMarchingCubes(grid,
+                           fmt::format("{}.ply", savePath).c_str(),
+                           divider);
     }
   }
 
+  clest::println("Done!");
   std::cin.get();
   return 0;
 }

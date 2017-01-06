@@ -265,6 +265,12 @@ namespace las {
       return false;
     }
 
+    if (publicHeader.xScaleFactor == 0.0
+        || publicHeader.yScaleFactor == 0.0
+        || publicHeader.zScaleFactor == 0.0) {
+      return false;
+    }
+
     return true;
   }
 

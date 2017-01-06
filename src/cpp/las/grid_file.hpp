@@ -7,6 +7,14 @@
 
 namespace grid {
 
+#pragma pack(push, 1)
+  struct Color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+  };
+#pragma pack(pop)
+
   class GridFile {
   public:
     GridFile() = default;
@@ -52,7 +60,8 @@ namespace grid {
     };
 #pragma pack(pop)
 
-    std::vector<uint16_t> mData;
+    std::vector<uint16_t> mData = std::vector<uint16_t>(0);
+    std::vector<Color> mColors = std::vector<Color>(0);
     GridHeader mHeader;
 
   };

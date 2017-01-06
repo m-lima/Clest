@@ -19,7 +19,7 @@ namespace clest {
 
   template <typename ... Args>
   inline void println(const char * format, const Args & ... args) {
-    fmt::print(format, args ...);
+    fmt::print(format, args...);
     fmt::print("\n");
   }
 
@@ -27,7 +27,7 @@ namespace clest {
   inline void println(std::FILE * file,
                       char * format,
                       const Args & ... args) {
-    fmt::print(file, format, args ...);
+    fmt::print(file, format, args...);
     fmt::print(file, "\n");
   }
 }
