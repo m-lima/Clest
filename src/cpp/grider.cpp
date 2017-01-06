@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <clest/util.hpp>
 #include <clest/ostream.hpp>
 
@@ -8,7 +10,7 @@
 /// It loads the proper `LASFile<N>` at compile time to speed up the loading,
 /// since memory is not an issue given that the LASFile will be discarded
 /// as soon as the grid is created
-grid::GridFile createGrid(const std::string & path,
+grid::GridFile convertGrid(const std::string & path,
                           int type,
                           unsigned short sizeX,
                           unsigned short sizeY,
@@ -53,66 +55,51 @@ int extractType(char * typeParam, char * convertPath) {
   if (typeParam) {
     try {
       type = std::stoi(typeParam);
-      clest::println("Type specified as: {}", type);
+      clest::println("Type specified as: Format{}", type);
     } catch (...) {
       clest::println(stderr, "Invalid type value [{}]\nUsing default -1");
     }
   } else {
-    clest::println("No type given. Auto-detecting native type");
-    las::LASFile<-1> dummyLas(convertPath);
-    dummyLas.loadHeaders();
-    type = dummyLas.publicHeader.pointDataRecordFormat;
-    clest::println("Type auto-detected as: {}", type);
+    try {
+      clest::println("No type given. Auto-detecting native type");
+      las::LASFile<-1> dummyLas(convertPath);
+      dummyLas.loadHeaders();
+      type = dummyLas.publicHeader.pointDataRecordFormat;
+      clest::println("Type auto-detected as: Format{}", type);
+    } catch (...) {
+      clest::println(stderr, "Invalid type value [{}]\nUsing default -1");
+    }
   }
 
   return type;
 }
 
 unsigned short extractSize(char * sizeParam, char axis) {
-  unsigned size;
-  try {
-    size = std::stoi(sizeParam);
-    if (size <= 0) {
+  unsigned size = 256;
+  if (sizeParam) {
+    try {
+      size = std::stoi(sizeParam);
+    } catch (...) {
+      if (size <= 0) {
+        clest::println(stderr,
+                       "Size of {} has to be greater than zero: {}\n"
+                       "Reverting to 256",
+                       axis,
+                       sizeParam);
+        size = 256;
+      }
       clest::println(stderr,
-                     "Size of {} has to be greater than zero: {}\n"
-                     "Reverting to 256",
+                     "Invalid value for {} size: {}\nReverting to 256",
                      axis,
                      sizeParam);
       size = 256;
     }
-  } catch (...) {
-    clest::println(stderr,
-                   "Invalid value for {} size: {}\nReverting to 256",
-                   axis,
-                   sizeParam);
-    size = 256;
   }
   clest::println("Using {} size of: {}", axis, size);
   return size;
 }
 
-void performMarchingCubes(grid::GridFile & grid,
-                          const char const * path) {
-  MarchingCubes marchingCubes;
-  marchingCubes.set_resolution(grid.sizeX(), grid.sizeY(), grid.sizeZ());
-  marchingCubes.init_all();
-
-  for (int i = 0; i < grid.sizeX(); ++i) {
-    for (int j = 0; j < grid.sizeX(); ++j) {
-      for (int k = 0; k < grid.sizeX(); ++k) {
-        marchingCubes.set_data(grid.voxel(i, j, k), i, j, k);
-      }
-    }
-  }
-  marchingCubes.run();
-
-  marchingCubes.clean_temps();
-  marchingCubes.writePLY(path);
-
-  marchingCubes.clean_all();
-}
-
-int main(int argc, char * argv[]) {
+grid::GridFile getGrid(int argc, char * argv[]) {
 
   // Load from an existing grid
   if (clest::findOption(argv, argv + argc, "-l")) {
@@ -124,24 +111,16 @@ int main(int argc, char * argv[]) {
                      "{}\n",
                      loadPath);
 
-      auto grid = loadGrid(loadPath);
-
-      clest::println("Size: {} {} {}\nMax: {}",
-                     grid.sizeX(),
-                     grid.sizeY(),
-                     grid.sizeZ(),
-                     grid.maxValue());
-      
-      performMarchingCubes(grid,
-                           fmt::format("{}.{}", loadPath, ".ply").c_str());
+      return loadGrid(loadPath);
 
     // Load switch was used, but no file was given
     } else {
       clest::println(stderr, "Error: No file path was given. Quitting..");
+      std::quick_exit(-1);
     }
 
   // Load from an existing LAS
-  } else if (clest::findOption(argv, argv + argc, "-l")) {
+  } else if (clest::findOption(argv, argv + argc, "-c")) {
 
     auto convertPath = clest::extractOption(argv, argv + argc, "-c");
     if (convertPath) {
@@ -157,20 +136,90 @@ int main(int argc, char * argv[]) {
       unsigned short sizeY = extractSize(yParam, 'Y');
       unsigned short sizeZ = extractSize(zParam, 'Z');
 
-      auto grid = createGrid(convertPath, type, sizeX, sizeY, sizeZ);
-      performMarchingCubes(grid,
-                           fmt::format("{}.{}", convertPath, ".ply").c_str());
+      clest::println("Creating grid..");
+      return convertGrid(convertPath, type, sizeX, sizeY, sizeZ);
 
     // Covert switch was used, but no file was given
     } else {
       clest::println(stderr, "Error: No file path was given. Quitting..");
+      std::quick_exit(-1);
     }
 
-  // None of the switches were found
-  } else { 
+    // None of the switches were found
+  } else {
     clest::println(stderr, "No valid parameters given.. Nothing to do");
+    std::quick_exit(-1);
+  }
+}
+
+void performMarchingCubes(grid::GridFile & grid,
+                          const char * const path) {
+  MarchingCubes marchingCubes;
+  marchingCubes.set_resolution(grid.sizeX(), grid.sizeY(), grid.sizeZ());
+  marchingCubes.init_all();
+  clest::println("MC: [{} {} {}]",
+                 marchingCubes.size_x(),
+                 marchingCubes.size_y(),
+                 marchingCubes.size_z());
+
+  for (int i = 0; i < grid.sizeX(); ++i) {
+    for (int j = 0; j < grid.sizeY(); ++j) {
+      for (int k = 0; k < grid.sizeZ(); ++k) {
+        marchingCubes.set_data(grid.data(i, j, k), i, j, k);
+      }
+    }
+  }
+  marchingCubes.run(grid.maxValue() * 0.5f);
+
+  marchingCubes.clean_temps();
+  marchingCubes.writePLY(path);
+
+  marchingCubes.clean_all();
+}
+
+int main(int argc, char * argv[]) {
+  
+  auto grid = getGrid(argc, argv);
+
+  // Save grid
+  if (clest::findOption(argv, argv + argc, "-s")) {
+    clest::println("Saving grid");
+
+    auto savePath = clest::extractOption(argv, argv + argc, "-s");
+    if (savePath && savePath[0] != '-') {
+      clest::println("Saving as the given name:\n{}", savePath);
+      grid.save(savePath);
+    } else {
+      savePath = clest::extractOption(argv, argv + argc, "-l");
+      if (!savePath) {
+        savePath = clest::extractOption(argv, argv + argc, "-c");
+      }
+        
+      clest::println("Saving as the automatic name:\n{}.grid", savePath);
+      grid.save(fmt::format("{}.grid", savePath));
+    }
   }
 
+  // March grid
+  if (clest::findOption(argv, argv + argc, "-m")) {
+    clest::println("Marching the grid..");
+
+    auto savePath = clest::extractOption(argv, argv + argc, "-m");
+    if (savePath) {
+      clest::println("Saving the mesh as the given name:\n{}", savePath);
+      performMarchingCubes(grid, savePath);
+    } else {
+      savePath = clest::extractOption(argv, argv + argc, "-l");
+      if (!savePath) {
+        savePath = clest::extractOption(argv, argv + argc, "-c");
+      }
+
+      clest::println("Saving the mesh as the automatic name:\n{}.ply", savePath);
+      performMarchingCubes(grid, fmt::format("{}.ply", savePath).c_str());
+    }
+  }
+
+  std::cin.get();
   return 0;
 }
 

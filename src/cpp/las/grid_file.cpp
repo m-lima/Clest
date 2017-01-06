@@ -102,17 +102,23 @@ namespace grid {
     // Prepare the step sizes for creating the voxels
     double xStep = (lasFile.publicHeader.maxX - lasFile.publicHeader.minX)
       / (sizeX * lasFile.publicHeader.xScaleFactor);
-    double xOffset = (lasFile.publicHeader.minX - lasFile.publicHeader.xOffset)
+    double xOffset = lasFile.publicHeader.xOffset == 0 
+      ? 0.0
+      : (lasFile.publicHeader.minX - lasFile.publicHeader.xOffset)
       / (lasFile.publicHeader.xOffset);
 
     double yStep = (lasFile.publicHeader.maxY - lasFile.publicHeader.minY)
       / (sizeY * lasFile.publicHeader.yScaleFactor);
-    double yOffset = (lasFile.publicHeader.minY - lasFile.publicHeader.yOffset)
+    double yOffset = lasFile.publicHeader.yOffset == 0
+      ? 0.0
+      : (lasFile.publicHeader.minY - lasFile.publicHeader.yOffset)
       / (lasFile.publicHeader.yOffset);
 
     double zStep = (lasFile.publicHeader.maxZ - lasFile.publicHeader.minZ)
       / (sizeZ * lasFile.publicHeader.zScaleFactor);
-    double zOffset = (lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset)
+    double zOffset = lasFile.publicHeader.zOffset == 0
+      ? 0.0
+      : (lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset)
       / (lasFile.publicHeader.zOffset);
 
     // Clear the data vector and preallocate the proper size
@@ -132,7 +138,11 @@ namespace grid {
       if (localY == sizeY) localY--;
       if (localZ == sizeZ) localZ--;
 
-      if ((voxel(localX, localY, localZ)++) > max) {
+      if (localX > sizeX) clest::println(stderr, "X too large: [{}/{}]", localX, sizeX);
+      if (localY > sizeY) clest::println(stderr, "Y too large: [{}/{}]", localY, sizeY);
+      if (localZ > sizeZ) clest::println(stderr, "Z too large: [{}/{}]", localZ, sizeZ);
+
+      if ((data(localX, localY, localZ)++) > max) {
         max++;
       }
     }

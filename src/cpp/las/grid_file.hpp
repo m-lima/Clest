@@ -35,7 +35,7 @@ namespace grid {
     const uint16_t sizeZ() const { return mHeader.sizeZ; }
     const uint16_t maxValue() const { return mHeader.maxValue; }
 
-    uint16_t & voxel(unsigned int x, unsigned int y, unsigned int z) {
+    uint16_t & data(unsigned int x, unsigned int y, unsigned int z) {
       return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];
     }
 
