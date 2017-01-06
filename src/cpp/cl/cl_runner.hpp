@@ -1,6 +1,21 @@
 ﻿#pragma once
 
-#include <clest/cl.hpp>
+#include <memory>
+#include <vector>
+#include <string>
+#include <unordered_map>
+
+#define __CL_ENABLE_EXCEPTIONS
+#include <cl/cl.hpp>
+#include <clest/ostream.hpp>
+
+#ifdef _CMAKE_BOOST_FOUND
+#include <boost/algorithm/string.hpp>
+#define _TRIMMER boost
+#else
+#include <clest/util.hpp>
+#define _TRIMMER clest
+#endif
 
 namespace clest {
 
@@ -10,7 +25,25 @@ namespace clest {
     ClRunner(cl_device_type type,
              const std::vector<const char *> & requirements);
 
-    void loadProgram(const std::string & path);
+    void loadProgram(const std::string & name,
+                     const std::string & path);
+
+    template <typename... T>
+    cl::make_kernel<T...> makeKernel(const std::string & program,
+                                     const std::string & kernelName) {
+      auto builtProgram = mPrograms.find(program);
+      if (builtProgram == mPrograms.end()) {
+        throw clest::Exception::build("No program has been loaded yet");
+      }
+
+      try {
+        return cl::make_kernel<T...>(builtProgram->second, kernelName);
+      } catch (cl::Error & err) {
+        throw clest::Exception::build("OpenCL error: {} ({})",
+                                      err.what(),
+                                      err.err());
+      }
+    }
 
     static void printFull() {
       clest::println("Listing all platforms and devices..");
@@ -29,7 +62,7 @@ namespace clest {
              platform != platforms.end();
              platform++) {
           name = platform->getInfo<CL_PLATFORM_NAME>();
-          boost::trim(name);
+          _TRIMMER::trim(name);
           clest::println("{}", name);
           std::vector<cl::Device> platformDevices;
 
@@ -40,7 +73,7 @@ namespace clest {
                  device != platformDevices.end();
                  device++) {
               name = device->getInfo <CL_DEVICE_NAME>();
-              boost::trim(name);
+              _TRIMMER::trim(name);
               clest::println(" {} {}",
                 ((device + 1) != platformDevices.end() ? "├" : "└"),
                              name);
@@ -48,7 +81,7 @@ namespace clest {
           } catch (...) {
           }
         }
-      } catch (const cl::Error &err) {
+      } catch (const cl::Error & err) {
         throw clest::Exception::build("OpenCL error: {} ({})",
                                       err.what(),
                                       err.err());
@@ -83,8 +116,10 @@ namespace clest {
   private:
 
     bool mContext = false;
-    std::unique_ptr<cl::Program> uProgram;
+    std::unordered_map<std::string, cl::Program> mPrograms;
     std::unique_ptr<std::vector<cl::Device>> uDevices;
     std::unique_ptr<cl::Context> uContext;
   };
 }
+
+#undef _TRIMMER

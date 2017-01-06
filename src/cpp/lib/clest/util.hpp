@@ -1,10 +1,31 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
+#include <cctype>
 #include <fstream>
 #include <fmt/format.h>
 
 namespace clest {
+  
+  inline void trim(std::string & str) {
+    // Left trim
+    str.erase(
+      str.begin(),
+      std::find_if(str.begin(),
+                   str.end(),
+                   std::not1(std::ptr_fun<int, int>(std::isspace)))
+    );
+
+    // Right trim
+    str.erase(
+      std::find_if(str.rbegin(),
+                   str.rend(),
+                   std::not1(std::ptr_fun<int, int>(std::isspace))).base(), 
+      str.end()
+    );
+  }
+
   inline const std::string simplifyValue(double value) {
     if (value < 1000) {
       return fmt::format("{:d}", value);

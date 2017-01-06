@@ -211,6 +211,8 @@ int main(int argc, char * argv[]) {
   
   clest::ClRunner::printFull();
   clest::ClRunner ocl(CL_DEVICE_TYPE_GPU, { "fp64" });
+  ocl.loadProgram("marching", "opencl/marching.cl");
+  ocl.makeKernel<cl::Buffer>("marching", "createGrid");
 
   auto grid = getGrid(argc, argv);
 

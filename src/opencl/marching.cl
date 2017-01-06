@@ -1,20 +1,20 @@
 kernel
 __attribute__((vec_type_hint(float3)))
 void createGrid(constant uint * points,
-                global ushort * output,
+                global volatile uint * output,
                 float3 step,
                 float3 offset,
                 ushort3 size) {
   const ulong index = get_global_id(0);
-  uint3 point = points[index];
+  float3 point = points[index];
 
-  ushort3 grid = (point - offset) / step;
+  ushort3 grid = convert_ushort3((point - offset) / step);
 
   if (grid.x == size.x) grid.x--;
   if (grid.y == size.y) grid.y--;
   if (grid.z == size.z) grid.z--;
 
-  atomic_inc(output[grid.z + grid.y * size.z + grid.x * size.y * size.z]);
+  atomic_inc(&output[grid.z + grid.y * size.z + grid.x * size.y * size.z]);
 }
 
 //kernel
