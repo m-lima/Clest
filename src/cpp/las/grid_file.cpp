@@ -72,6 +72,15 @@ namespace grid {
                          uint16_t sizeZ
   ) {
 
+    // Check validity of the parameters
+    if (sizeX == 0 || sizeY == 0 || sizeZ == 0) {
+      throw clest::Exception::build(
+        "The size [{}, {}, {}] is invalid and must be larger than zero",
+        sizeX,
+        sizeY,
+        sizeZ);
+    }
+
     // Ensure all the data is laoded
     if (!lasFile.isValidAndFullyLoaded()) {
       if (!lasFile.isValid()) {
@@ -83,15 +92,6 @@ namespace grid {
         throw clest::Exception::build("Could not load LAS file:\n{}",
                                       lasFile.filePath);
       }
-    }
-
-    // Check validity of the parameters
-    if (sizeX == 0 || sizeY == 0 || sizeZ == 0) {
-      throw clest::Exception::build(
-        "The size [{}, {}, {}] is invalid and must be larger than zero",
-        sizeX,
-        sizeY,
-        sizeZ);
     }
 
     // Update the header
@@ -128,7 +128,7 @@ namespace grid {
       * lasFile.publicHeader.zScaleFactor / deltaAxis;
 
     // Clear the data vector and preallocate the proper size
-    mData = std::vector<uint16_t>(sizeX * sizeY * sizeZ);
+    mData = std::vector<uint32_t>(sizeX * sizeY * sizeZ);
 
     // Iterate and increment the voxel values accordingly
     uint16_t localX;
@@ -159,6 +159,7 @@ namespace grid {
                                   uint16_t sizeY,\
                                   uint16_t sizeZ);
 
+  __DECLARE_TEMPLATES(-2)
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)
   __DECLARE_TEMPLATES(1)

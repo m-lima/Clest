@@ -43,8 +43,16 @@ namespace grid {
     const uint16_t sizeZ() const { return mHeader.sizeZ; }
     const uint16_t maxValue() const { return mHeader.maxValue; }
 
-    uint16_t & data(unsigned int x, unsigned int y, unsigned int z) {
+    uint32_t & data(unsigned int x, unsigned int y, unsigned int z) {
       return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];
+    }
+
+    const std::vector<uint32_t> * craw() const {
+      return &mData;
+    }
+
+    std::vector<uint32_t> * raw() {
+      return &mData;
     }
 
   private:
@@ -60,7 +68,7 @@ namespace grid {
     };
 #pragma pack(pop)
 
-    std::vector<uint16_t> mData = std::vector<uint16_t>(0);
+    std::vector<uint32_t> mData = std::vector<uint32_t>(0);
     std::vector<Color> mColors = std::vector<Color>(0);
     GridHeader mHeader;
 

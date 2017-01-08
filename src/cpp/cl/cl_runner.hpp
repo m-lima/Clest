@@ -27,6 +27,10 @@ namespace clest {
 
     void loadProgram(const std::string & name,
                      const std::string & path);
+    void releaseProgram(const std::string & name);
+
+    std::vector<cl::CommandQueue> commandQueues(int deviceCount);
+    void releaseQueues();
 
     template <typename... T>
     cl::make_kernel<T...> makeKernel(const std::string & program,
@@ -44,6 +48,25 @@ namespace clest {
                                       err.err());
       }
     }
+
+    template <typename... Args>
+    cl::Buffer & ClRunner::createBuffer(const std::string & name,
+                                        Args... args) {
+      if (mBuffers.find(name) != mBuffers.end()) {
+        throw clest::Exception::build("Trying to create a buffer with an"
+                                      "existing name");
+      }
+
+      try {
+        return (mBuffers.emplace(name, cl::Buffer(mContext, args...))
+                .first)->second;
+      } catch (cl::Error & err) {
+        throw clest::Exception::build("OpenCL error: {} ({})",
+                                      err.what(),
+                                      err.err());
+      }
+    }
+    void releaseBuffer(const std::string & name);
 
     static void printFull() {
       clest::println("Listing all platforms and devices..");
@@ -115,10 +138,11 @@ namespace clest {
 
   private:
 
-    bool mContext = false;
+    cl::Context mContext;
+    std::vector<cl::Device> mDevices;
     std::unordered_map<std::string, cl::Program> mPrograms;
-    std::unique_ptr<std::vector<cl::Device>> uDevices;
-    std::unique_ptr<cl::Context> uContext;
+    std::vector<cl::CommandQueue> mCommands;
+    std::unordered_map<std::string, cl::Buffer> mBuffers;
   };
 }
 

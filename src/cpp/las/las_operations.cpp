@@ -454,6 +454,7 @@ namespace las {
   template void colorize(const LASFile<index> & lasFile);
 #endif
 
+  __DECLARE_TEMPLATES(-2)
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)
   __DECLARE_TEMPLATES(1)

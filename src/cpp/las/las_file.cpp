@@ -287,6 +287,7 @@ namespace las {
 #define __DECLARE_TEMPLATES(index)\
   template class LASFile<index>;
 
+  __DECLARE_TEMPLATES(-2)
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)
   __DECLARE_TEMPLATES(1)

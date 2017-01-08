@@ -76,6 +76,13 @@ namespace las {
   struct PointData;
 
   template<>
+  struct PointData<-2> {
+    static constexpr int FORMAT = -2;
+    _PART_XYZ;
+    uint32_t padding;
+  };
+
+  template<>
   struct PointData<-1> {
     static constexpr int FORMAT = -1;
     _PART_XYZ;

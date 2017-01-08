@@ -71,6 +71,15 @@ namespace clest {
     return testValue.c[0] == 1;
   }
 
+  inline const char * extractOption(const std::vector<const char*> args,
+                              const std::string & option) {
+    auto itr = std::find(args.cbegin(), args.cend(), option);
+    if (itr != args.cend() && ++itr != args.cend()) {
+      return *itr;
+    }
+    return 0;
+  }
+
   inline char * extractOption(char * begin[],
                               char * end[],
                               const std::string & option) {
@@ -81,9 +90,14 @@ namespace clest {
     return 0;
   }
 
+  inline bool findOption(const std::vector<const char*> args,
+                         const std::string& option) {
+    return std::find(args.cbegin(), args.cend(), option) != args.cend();
+  }
+
   inline bool findOption(char * begin[],
-                              char * end[],
-                              const std::string& option) {
+                         char * end[],
+                         const std::string& option) {
     return std::find(begin, end, option) != end;
   }
 

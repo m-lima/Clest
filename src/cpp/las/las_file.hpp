@@ -24,10 +24,20 @@ namespace las {
     void loadHeaders();
     uint64_t loadData(const Limits<uint32_t> & limits = Limits<uint32_t>());
     uint64_t pointDataCount() const;
+    
+    void save(std::string file) const;
+    
+    void releaseRecordHeaders() {
+      recordHeaders = std::vector<RecordHeader>(0);
+    };
+      
+    void releaseData() {
+      pointData = std::vector<PointData<N>>(0);
+    };
+    
     void save() const {
       save(filePath);
     }
-    void save(std::string file) const;
 
   private:
     uint64_t _pointDataCount;
