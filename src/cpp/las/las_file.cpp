@@ -168,9 +168,10 @@ namespace las {
   template <int N>
   uint64_t LASFile<N>::loadData(const Limits<uint32_t> & limits) {
 
+    // Check if the header is loaded
     if (!isValid()) {
       throw clest::Exception::build("Trying to load data without a valid "
-                                    "header for:\{}",
+                                    "header for:\n{}",
                                     filePath);
     }
 
