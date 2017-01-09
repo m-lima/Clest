@@ -3,7 +3,8 @@
 
 #include <vector>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
+//#include <boost/date_time/posix_time/posix_time.hpp>
+#include <sstream>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
@@ -32,7 +33,8 @@ namespace {
 
 int main(int argc, char *argv[]) {
 
-  constexpr size_t VECTOR_SIZE = 0x20000000;
+  constexpr size_t VECTOR_SIZE = 0x200000;
+  //constexpr size_t VECTOR_SIZE = 0x20000000;
 
   {
     std::vector<cl::Platform> platforms;
@@ -94,8 +96,8 @@ int main(int argc, char *argv[]) {
   std::vector<uint8_t> dataParallel;
   std::vector<uint8_t> dataOCL;
 
-  boost::posix_time::ptime start;
-  boost::posix_time::time_duration duration;
+  //boost::posix_time::ptime start;
+  //boost::posix_time::time_duration duration;
 
   for (uint8_t simple = 0; simple < 2; simple++) {
     for (size_t size = 1; size <= VECTOR_SIZE; size <<= 1) {
@@ -109,52 +111,52 @@ int main(int argc, char *argv[]) {
       dataOCL.resize(size);
 
       // Serial
-      clest::println(
-        stderr,
-        "Starting serial battery [{}]",
-        boost::posix_time::to_simple_string(
-          boost::posix_time::microsec_clock::local_time()
-        )
-      );
+      //clest::println(
+      //  stderr,
+      //  "Starting serial battery [{}]",
+      //  boost::posix_time::to_simple_string(
+      //    boost::posix_time::microsec_clock::local_time()
+      //  )
+      //);
       for (unsigned int i = 0; i < iterations; ++i) {
-        start = boost::posix_time::microsec_clock::local_time();
+        //start = boost::posix_time::microsec_clock::local_time();
         if (simple == 0) {
           _fractalSerialS(dataSerial);
         } else {
           _fractalSerialP(dataSerial, reference);
         }
-        duration = boost::posix_time::microsec_clock::local_time() - start;
-        avgSerial += duration.total_microseconds();
-        clest::println(
-          stderr,
-          "Finished iteration [{}/{}] [{}ms]",
-          i + 1,
-          iterations,
-          duration.total_microseconds() / 1000
-        );
+        //duration = boost::posix_time::microsec_clock::local_time() - start;
+        //avgSerial += duration.total_microseconds();
+        //clest::println(
+        //  stderr,
+        //  "Finished iteration [{}/{}] [{}ms]",
+        //  i + 1,
+        //  iterations,
+        //  duration.total_microseconds() / 1000
+        //);
       }
       avgSerial /= iterations * 1000.0;
 
-      clest::println(
-        stderr,
-        "Finished serial battery [{}]"
-        "Average time: {:03.2f}ms\n",
-        boost::posix_time::to_simple_string(
-          boost::posix_time::microsec_clock::local_time()
-        ),
-        avgSerial
-      );
+      //clest::println(
+      //  stderr,
+      //  "Finished serial battery [{}]"
+      //  "Average time: {:03.2f}ms\n",
+      //  boost::posix_time::to_simple_string(
+      //    boost::posix_time::microsec_clock::local_time()
+      //  ),
+      //  avgSerial
+      //);
 
       // Parallel CPU
-      clest::println(
-        stderr,
-        "Starting parallel battery [{}]",
-        boost::posix_time::to_simple_string(
-          boost::posix_time::microsec_clock::local_time()
-        )
-      );
+      //clest::println(
+      //  stderr,
+      //  "Starting parallel battery [{}]",
+      //  boost::posix_time::to_simple_string(
+      //    boost::posix_time::microsec_clock::local_time()
+      //  )
+      //);
       for (unsigned int i = 0; i < iterations; ++i) {
-        start = boost::posix_time::microsec_clock::local_time();
+        //start = boost::posix_time::microsec_clock::local_time();
         tbb::blocked_range<size_t> block(0, dataParallel.size());
         if (simple == 0) {
           tbb::parallel_for(block, [&](tbb::blocked_range<size_t> range) {
@@ -174,27 +176,27 @@ int main(int argc, char *argv[]) {
             }
           });
         }
-        duration = boost::posix_time::microsec_clock::local_time() - start;
-        avgParallel += duration.total_microseconds();
-        clest::println(
-          stderr,
-          "Finished iteration [{}/{}] [{}ms]",
-          i + 1,
-          iterations,
-          duration.total_microseconds() / 1000
-        );
+        //duration = boost::posix_time::microsec_clock::local_time() - start;
+        //avgParallel += duration.total_microseconds();
+        //clest::println(
+        //  stderr,
+        //  "Finished iteration [{}/{}] [{}ms]",
+        //  i + 1,
+        //  iterations,
+        //  duration.total_microseconds() / 1000
+        //);
       }
       avgParallel /= iterations * 1000.0;
 
-      clest::println(
-        stderr,
-        "Finished parallel battery [{}]\n"
-        "Average time: {:03.2f}ms",
-        boost::posix_time::to_simple_string(
-          boost::posix_time::microsec_clock::local_time()
-        ),
-        avgParallel
-      );
+      //clest::println(
+      //  stderr,
+      //  "Finished parallel battery [{}]\n"
+      //  "Average time: {:03.2f}ms",
+      //  boost::posix_time::to_simple_string(
+      //    boost::posix_time::microsec_clock::local_time()
+      //  ),
+      //  avgParallel
+      //);
 
       clest::println(stderr, "Check results.. ");
       size_t errorCount = 0;
@@ -216,13 +218,13 @@ int main(int argc, char *argv[]) {
       dataParallel = std::vector<uint8_t>();
 
       // Parallel GPU
-      clest::println(
-        stderr,
-        "Starting OpenCL battery [{}]",
-        boost::posix_time::to_simple_string(
-          boost::posix_time::microsec_clock::local_time()
-        )
-      );
+      //clest::println(
+      //  stderr,
+      //  "Starting OpenCL battery [{}]",
+      //  boost::posix_time::to_simple_string(
+      //    boost::posix_time::microsec_clock::local_time()
+      //  )
+      //);
 
       std::unique_ptr<cl::Device> devicePtr = nullptr;
       std::unique_ptr<cl::Program> programPtr = nullptr;
@@ -278,21 +280,21 @@ int main(int argc, char *argv[]) {
           );
 
           for (unsigned int i = 0; i < iterations; ++i) {
-            start = boost::posix_time::microsec_clock::local_time();
+            //start = boost::posix_time::microsec_clock::local_time();
             kernel(cl::EnqueueArgs(queue, cl::NDRange(size)), remoteData);
 
             queue.finish();
 
             cl::copy(queue, remoteData, dataOCL.begin(), dataOCL.end());
-            duration = boost::posix_time::microsec_clock::local_time() - start;
-            avgOCL += duration.total_microseconds();
-            clest::println(
-              stderr,
-              "Finished iteration [{}/{}] [{}ms]",
-              i + 1,
-              iterations,
-              duration.total_microseconds() / 1000
-            );
+            //duration = boost::posix_time::microsec_clock::local_time() - start;
+            //avgOCL += duration.total_microseconds();
+            //clest::println(
+            //  stderr,
+            //  "Finished iteration [{}/{}] [{}ms]",
+            //  i + 1,
+            //  iterations,
+            //  duration.total_microseconds() / 1000
+            //);
           }
         } else {
           cl::make_kernel<cl::Buffer, unsigned char> kernel(
@@ -301,7 +303,7 @@ int main(int argc, char *argv[]) {
           );
 
           for (unsigned int i = 0; i < iterations; ++i) {
-            start = boost::posix_time::microsec_clock::local_time();
+            //start = boost::posix_time::microsec_clock::local_time();
             kernel(
               cl::EnqueueArgs(queue, cl::NDRange(size)), remoteData, reference
             );
@@ -309,29 +311,29 @@ int main(int argc, char *argv[]) {
             queue.finish();
 
             cl::copy(queue, remoteData, dataOCL.begin(), dataOCL.end());
-            duration = boost::posix_time::microsec_clock::local_time() - start;
-            avgOCL += duration.total_microseconds();
-            clest::println(
-              stderr,
-              "Finished iteration [{}/{}] [{}ms]",
-              i + 1,
-              iterations,
-              duration.total_microseconds() / 1000
-            );
+            //duration = boost::posix_time::microsec_clock::local_time() - start;
+            //avgOCL += duration.total_microseconds();
+            //clest::println(
+            //  stderr,
+            //  "Finished iteration [{}/{}] [{}ms]",
+            //  i + 1,
+            //  iterations,
+            //  duration.total_microseconds() / 1000
+            //);
           }
         }
 
         avgOCL /= iterations * 1000.0;
 
-        clest::println(
-          stderr,
-          "Finished parallel battery [{}]\n"
-          "Average time: {:03.2f}ms",
-          boost::posix_time::to_simple_string(
-            boost::posix_time::microsec_clock::local_time()
-          ),
-          avgOCL
-        );
+        //clest::println(
+        //  stderr,
+        //  "Finished parallel battery [{}]\n"
+        //  "Average time: {:03.2f}ms",
+        //  boost::posix_time::to_simple_string(
+        //    boost::posix_time::microsec_clock::local_time()
+        //  ),
+        //  avgOCL
+        //);
 
         clest::println(stderr, "Check results.. ");
         size_t errorCount = 0;
