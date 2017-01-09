@@ -110,6 +110,11 @@ endif()
 
 set(SOURCES
   ${CPP_SRC_DIR}/main.cpp
+  ${CPP_SRC_DIR}/mesher.cpp
+  )
+
+set(HEADER
+  ${CPP_SRC_DIR}/mesher.hpp
   )
 
 set(START_SRC
@@ -123,7 +128,6 @@ set(LAS_SRC
   ${CPP_SRC_DIR}/las/grid_file.cpp
   ${CPP_SRC_DIR}/las/las_operations.cpp
   )
-list(APPEND SOURCES ${LAS_SRC})
 
 set(LAS_HPP
   ${CPP_SRC_DIR}/las/public_header.hpp
@@ -145,7 +149,6 @@ set(LIB_HPP
 set(MESH_SRC
   ${CPP_SRC_DIR}/mesh/cube_marcher.cpp
   )
-list(APPEND SOURCES ${MESH_SRC})
 
 set(MESH_HPP
   ${CPP_SRC_DIR}/mesh/cube_marcher.hpp
@@ -155,7 +158,6 @@ set(LEWINER_SRC
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.cpp
   ${CPP_SRC_DIR}/lewiner/ply.c
   )
-list(APPEND SOURCES ${LEWINER_SRC})
 
 set(LEWINER_HPP
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.h
@@ -166,7 +168,6 @@ set(LEWINER_HPP
 set(CL_SRC
   ${CPP_SRC_DIR}/cl/cl_runner.cpp
   )
-list(APPEND SOURCES ${CL_SRC})
 
 set(CL_HPP
   ${CPP_SRC_DIR}/cl/cl_runner.hpp
@@ -178,9 +179,15 @@ set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/marching.cl
   )
 
+list(APPEND SOURCES ${LAS_SRC})
+list(APPEND SOURCES ${MESH_SRC})
+list(APPEND SOURCES ${LEWINER_SRC})
+list(APPEND SOURCES ${CL_SRC})
+
 if(MSVC)
   # For MSVC, all files that are going to be visible in the IDE
   # should be added to the source
+  list(APPEND SOURCES ${HEADERS})
   list(APPEND SOURCES ${START_SRC})
   list(APPEND SOURCES ${LAS_HPP})
   list(APPEND SOURCES ${LIB_HPP})
