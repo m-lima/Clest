@@ -137,7 +137,7 @@ clest::Mesher getMesher(const std::vector<const char*> args) {
       if (clest::findOption(args, "-g")) {
         if (clest::findOption(args, "-s")) {
           clest::println(stderr, "Cannot save grid when converting in the GPU "
-                         "(using -g)\nIgnoring flag..");
+                         "(using -g)\nIgnoring save flag..");
         }
         return clest::Mesher(convertPath, sizeX, sizeY, sizeZ);
       }
@@ -272,6 +272,7 @@ int main(int argc, char * argv[]) {
   //}
 
   clest::println("Done!");
+  std::cin.get();
   return 0;
 }
 

@@ -26,13 +26,14 @@ namespace clest {
              const std::vector<const char *> & requirements);
 
     void loadProgram(const std::string & name,
-                     const std::string & path);
+                     const std::string & path,
+                     const char * defines = "");
     void releaseProgram(const std::string & name);
 
     std::vector<cl::CommandQueue> commandQueues(int deviceCount);
     void releaseQueues();
 
-    template <typename... T>
+    template <typename ... T>
     cl::make_kernel<T...> makeKernel(const std::string & program,
                                      const std::string & kernelName) {
       auto builtProgram = mPrograms.find(program);
@@ -49,9 +50,9 @@ namespace clest {
       }
     }
 
-    template <typename... Args>
+    template <typename ... Args>
     cl::Buffer & ClRunner::createBuffer(const std::string & name,
-                                        Args... args) {
+                                        const Args & ... args) {
       if (mBuffers.find(name) != mBuffers.end()) {
         throw clest::Exception::build("Trying to create a buffer with an"
                                       "existing name");
@@ -66,7 +67,18 @@ namespace clest {
                                       err.err());
       }
     }
+
+    const cl::Buffer & ClRunner::getBuffer(const std::string & name) const {
+      return mBuffers.at(name);
+    }
     void releaseBuffer(const std::string & name);
+
+    const cl::Context & context() const {
+      return mContext;
+    }
+    operator const cl::Context & () const {
+      return mContext;
+    }
 
     static void printFull() {
       clest::println("Listing all platforms and devices..");

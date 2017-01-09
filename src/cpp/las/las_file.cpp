@@ -43,6 +43,11 @@ namespace {
   ) {
     constexpr uint16_t BUFFER_SIZE = 8192;
 
+    if (typeSize < sizeof(las::PointData<N>)) {
+      throw clest::Exception::build("Trying to load a smaller format into a"
+                                    "larger holder format");
+    }
+
     // Clean up the container
     // Even if loading chunks, the memory is supposed to be capped
     container = std::vector<las::PointData<N>>();
@@ -162,6 +167,12 @@ namespace las {
   /// will be performed if `limits.isMaxed()`
   template <int N>
   uint64_t LASFile<N>::loadData(const Limits<uint32_t> & limits) {
+
+    if (!isValid()) {
+      throw clest::Exception::build("Trying to load data without a valid "
+                                    "header for:\{}",
+                                    filePath);
+    }
 
     // Check filename sanity
     std::ifstream fileStream(filePath,

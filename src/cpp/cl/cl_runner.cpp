@@ -1,6 +1,7 @@
 #include "cl_runner.hpp"
 
 #include <fstream>
+#include <numeric>
 
 namespace clest {
 
@@ -79,7 +80,9 @@ namespace clest {
   }
 
   void ClRunner::loadProgram(const std::string & name,
-                             const std::string & path) {
+                             const std::string & path,
+                             const char * defines)
+  {
     if (mDevices.empty()) {
       throw clest::Exception::build("Trying to load program without devices");
     }
@@ -100,8 +103,20 @@ namespace clest {
         mContext,
         std::string(std::istreambuf_iterator<char>(stream),
                     std::istreambuf_iterator<char>()));
+
+      clest::println("Build log for {} ({})", name, path);
+      for (auto device : mDevices) {
+        clest::println("== Device {}:\n{}",
+                       device.getInfo<CL_DEVICE_NAME>(),
+                       program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+      }
       try {
-        program.build(mDevices);
+//#if defined(_DEBUG) || defined(NDEBUG)
+        //const char * options = defines + " -cl-opt-disable";
+        //program.build(mDevices, options);
+//#else
+        program.build(mDevices, defines);
+//#endif
 
         mPrograms[name] = std::move(program);
       } catch (cl::Error & err) {
