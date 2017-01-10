@@ -9,64 +9,6 @@
 #include "cl/cl_runner.hpp"
 #include "mesher.hpp"
 
-/// Create a grid based on a LASFile
-/// It loads the proper `LASFile<N>` at compile time to speed up the loading,
-/// since memory is not an issue given that the LASFile will be discarded
-/// as soon as the grid is created
-//grid::GridFile convertGrid(const std::string & path,
-//                          int type,
-//                          unsigned short sizeX,
-//                          unsigned short sizeY,
-//                          unsigned short sizeZ) noexcept {
-//#define __DECLARE_TEMPLATES(index)\
-//    case index:\
-//    {\
-//      las::LASFile<index> las(path);\
-//      return grid::GridFile(las, sizeX, sizeY, sizeZ);\
-//    }
-//
-//  try {
-//    switch (type) {
-//      default:
-//        __DECLARE_TEMPLATES(-1)
-//          __DECLARE_TEMPLATES(0)
-//          __DECLARE_TEMPLATES(1)
-//          __DECLARE_TEMPLATES(2)
-//          __DECLARE_TEMPLATES(3)
-//    }
-//  } catch (...) {
-//    clest::println(stderr,
-//                   "The application could not proceed and is quitting");
-//    std::exit(-1);
-//  }
-//
-//#undef __DECLARE_TEMPLATES
-//}
-
-//int extractType(const char * typeParam, const char * convertPath) {
-//  int type = -1;
-//  if (typeParam) {
-//    try {
-//      type = std::stoi(typeParam);
-//      clest::println("Type specified as: Format{}", type);
-//    } catch (...) {
-//      clest::println(stderr, "Invalid type value [{}]\nUsing default -1");
-//    }
-//  } else {
-//    try {
-//      clest::println("No type given. Auto-detecting native type");
-//      las::LASFile<-1> dummyLas(convertPath);
-//      dummyLas.loadHeaders();
-//      type = dummyLas.publicHeader.pointDataRecordFormat;
-//      clest::println("Type auto-detected as: Format{}", type);
-//    } catch (...) {
-//      clest::println(stderr, "Invalid type value [{}]\nUsing default -1");
-//    }
-//  }
-//
-//  return type;
-//}
-
 unsigned short extractSize(const char * sizeParam, const char axis) {
   unsigned size = 256;
   if (sizeParam) {
@@ -104,6 +46,7 @@ clest::Mesher getMesher(const std::vector<const char*> args) {
                      loadPath);
 
       try {
+        clest::println();
         return clest::Mesher(grid::GridFile(loadPath));
       } catch (...) {
         clest::println(stderr,
@@ -139,6 +82,7 @@ clest::Mesher getMesher(const std::vector<const char*> args) {
           clest::println(stderr, "Cannot save grid when converting in the GPU "
                          "(using -g)\nIgnoring save flag..");
         }
+        clest::println();
         return clest::Mesher(convertPath, sizeX, sizeY, sizeZ);
       }
 
@@ -220,11 +164,10 @@ int main(int argc, char * argv[]) {
     args[i - 1] = argv[i];
   }
   clest::println("=============================");
+  clest::println();
   
   clest::ClRunner::printFull();
-  //clest::ClRunner ocl(CL_DEVICE_TYPE_GPU, { "fp64" });
-  //ocl.loadProgram("marching", "opencl/marching.cl");
-  //ocl.makeKernel<cl::Buffer>("marching", "createGrid");
+  clest::println();
 
   auto mesh = getMesher(args);
 

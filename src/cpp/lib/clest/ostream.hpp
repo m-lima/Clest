@@ -18,6 +18,16 @@ namespace clest {
   };
 
   template <typename ... Args>
+  inline void println() {
+    fmt::print("\n");
+  }
+
+  template <typename ... Args>
+  inline void println(std::FILE * file) {
+    fmt::print(file, "\n");
+  }
+
+  template <typename ... Args>
   inline void println(const char * format, const Args & ... args) {
     fmt::print(format, args...);
     fmt::print("\n");

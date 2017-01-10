@@ -66,7 +66,6 @@ namespace clest {
           }
           if (compatible) {
             mDevices.push_back(device);
-            printLongDeviceInfo(device);
           }
         }
       }
@@ -106,17 +105,16 @@ namespace clest {
 
       clest::println("Build log for {} ({})", name, path);
       for (auto device : mDevices) {
-        clest::println("== Device {}:\n{}",
+        clest::println("== Device {}:\n"
+                       "{}\n"
+                       "=========",
                        device.getInfo<CL_DEVICE_NAME>(),
                        program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
       }
+      clest::println();
+
       try {
-//#if defined(_DEBUG) || defined(NDEBUG)
-        //const char * options = defines + " -cl-opt-disable";
-        //program.build(mDevices, options);
-//#else
         program.build(mDevices, defines);
-//#endif
 
         mPrograms[name] = std::move(program);
       } catch (cl::Error & err) {
@@ -196,18 +194,17 @@ namespace clest {
                      compileWorkGroupSize[0],
                      compileWorkGroupSize[1],
                      compileWorkGroupSize[2]);
-      uint16_t globalSize[3];
-      size_t yo;
+      size_t globalSize[3];
       clGetKernelWorkGroupInfo(kernel(),
                                device(),
                                CL_KERNEL_GLOBAL_WORK_SIZE,
                                sizeof(globalSize),
                                globalSize,
-                               &yo);
-      clest::println(" * Global work size:               {}, {}, {} - {}",
+                               0);
+      clest::println(" * Global work size:               {}, {}, {}",
                      globalSize[0],
                      globalSize[1],
-                     globalSize[2], yo);
+                     globalSize[2]);
       clest::println(" * Local memory size:              {}",
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_LOCAL_MEM_SIZE>(device));
@@ -221,6 +218,8 @@ namespace clest {
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_WORK_GROUP_SIZE>(device));
     }
+
+    return kernel;
   }
 
   void ClRunner::releaseBuffer(const std::string & name) {
