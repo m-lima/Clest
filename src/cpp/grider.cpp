@@ -158,14 +158,6 @@ int main(int argc, char * argv[]) {
 
   std::vector<const char*> args(argc - 1);
 
-  clest::println("== Parameters ===============");
-  for (int i = 1; i < argc; ++i) {
-    clest::println(argv[i]);
-    args[i - 1] = argv[i];
-  }
-  clest::println("=============================");
-  clest::println();
-  
   clest::ClRunner::printFull();
   clest::println();
 

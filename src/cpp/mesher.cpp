@@ -16,12 +16,27 @@ namespace clest {
       * grid.sizeZ()
       * sizeof(cl_uint);
     auto maxMemory = mRunner.bufferMemory();
+    auto bufferMemory = mRunner.bufferMemory();
 
     if (maxMemory < gridSize) {
-      throw clest::Exception::build("The OpenCL context does not have enough "
-                                    "memory to handle the given operation.\n"
-                                    "Max allocable memory: {}B",
-                                    maxMemory);
+      throw clest::Exception::build("The OpenCL context does not have "
+                                    "enough memory to handle the given "
+                                    "operation.\n"
+                                    "Max memory: {}\n"
+                                    "Required:   {}",
+                                    maxMemory,
+                                    gridSize);
+    }
+
+    if (bufferMemory < gridSize) {
+      clest::println(stderr,
+                     "Warning: The dimensions for the grid are larger ",
+                     "than the maximum allocable size.\n"
+                     "This might result in instabilities\n"
+                     "Max allocable: {}B\n"
+                     "Required:      {}B",
+                     bufferMemory,
+                     gridSize);
     }
 
     auto command = mRunner.commandQueues(1)[0];
@@ -58,6 +73,17 @@ namespace clest {
                                         maxMemory,
                                         gridSize + sizeof(cl_uint3));
       }
+    
+      if (bufferMemory < gridSize) {
+        clest::println(stderr,
+                       "Warning: The dimensions for the grid are larger ",
+                       "than the maximum allocable size.\n"
+                       "This might result in instabilities\n"
+                       "Max allocable: {}B\n"
+                       "Required:      {}B",
+                       bufferMemory,
+                       gridSize);
+      }
 
       // Ensure all the data is laoded
       if (!lasFile.isValidAndFullyLoaded()) {
@@ -82,7 +108,6 @@ namespace clest {
         clest::println(stderr,
                        "There is not enough memory on the OpenCL context "
                        "to create the grid from a LAS file in one go.\n"
-                       "It might be desirable to create the grid on the CPU.\n"
                        "Reverting to breaking the LAS in {} chunks of {}B",
                        chunkCount,
                        chunkSize * sizeof(cl_uint3));
