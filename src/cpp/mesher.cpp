@@ -2,17 +2,33 @@
 
 #include <clest/cl.hpp>
 
+namespace {
+  constexpr char BUFFER_GRID[] = "grid";
+  constexpr char PROG_MARCHING[] = "marching";
+  constexpr char PROG_PATH_MARCHING[] = "opencl/marching.cl";
+}
+
 namespace clest {
 
-  void Mesher::load(const grid::GridFile & grid) {
+  void Mesher::load(grid::GridFile & grid) {
+    size_t gridSize = grid.sizeX()
+      * grid.sizeY()
+      * grid.sizeZ()
+      * sizeof(cl_uint);
+    auto maxMemory = mRunner.bufferMemory();
+
+    if (maxMemory < gridSize) {
+      throw clest::Exception::build("The OpenCL context does not have enough "
+                                    "memory to handle the given operation.\n"
+                                    "Max allocable memory: {}B",
+                                    maxMemory);
+    }
+
     auto command = mRunner.commandQueues(1)[0];
-    auto gridBuffer = mRunner.createBuffer("grid",
-                                           CL_MEM_READ_ONLY,
-                                           grid.sizeX()
-                                           * grid.sizeY()
-                                           * grid.sizeZ());
-    cl::copy(command, grid.craw()->begin(), grid.craw()->end(), gridBuffer);
-    command.finish();
+    mRunner.createBuffer(BUFFER_GRID,
+                         grid.raw()->begin(),
+                         grid.raw()->end(),
+                         true);
   }
 
   void Mesher::load(las::LASFile<-2> & lasFile,
@@ -29,11 +45,26 @@ namespace clest {
           sizeZ);
       }
 
+      auto gridSize = sizeX * sizeY * sizeZ * sizeof(cl_uint);
+      auto maxMemory = mRunner.totalMemory();
+      auto bufferMemory = mRunner.bufferMemory();
+
+      if (maxMemory - sizeof(cl_uint3) <= gridSize) {
+          throw clest::Exception::build("The OpenCL context does not have "
+                                        "enough memory to handle the given "
+                                        "operation.\n"
+                                        "Max memory: {}\n"
+                                        "Required:   {}",
+                                        maxMemory,
+                                        gridSize + sizeof(cl_uint3));
+      }
+
       // Ensure all the data is laoded
       if (!lasFile.isValidAndFullyLoaded()) {
         if (!lasFile.isValid()) {
           lasFile.loadHeaders();
         }
+
         clest::println("Loading las");
         lasFile.loadData();
 
@@ -41,6 +72,21 @@ namespace clest {
           throw clest::Exception::build("Could not load LAS file:\n{}",
                                         lasFile.filePath);
         }
+      }
+
+      auto chunkSize = std::min(maxMemory - gridSize,
+                                bufferMemory) / sizeof(cl_uint3);
+      size_t chunkCount = ((lasFile.pointData.size() - 1) / chunkSize) + 1;
+
+      if (chunkCount > 1) {
+        clest::println(stderr,
+                       "There is not enough memory on the OpenCL context "
+                       "to create the grid from a LAS file in one go.\n"
+                       "It might be desirable to create the grid on the CPU.\n"
+                       "Reverting to breaking the LAS in {} chunks of {}B",
+                       chunkCount,
+                       chunkSize * sizeof(cl_uint3));
+        clest::println();
       }
 
       // Prepare the step sizes for creating the voxels
@@ -67,8 +113,8 @@ namespace clest {
       
       try {
         auto command = mRunner.commandQueues(1)[0];
-        mRunner.loadProgram("marching",
-                            "opencl/marching.cl",
+        mRunner.loadProgram(PROG_MARCHING,
+                            PROG_PATH_MARCHING,
                             fmt::format(" -D CONST_OFFSET=(float3){{{:f},{:f},{:f}}}"
                                         " -D CONST_STEP=(float3){{{:f},{:f},{:f}}}"
                                         " -D CONST_SIZE_X={:d}"
@@ -84,32 +130,45 @@ namespace clest {
                                         sizeY,
                                         sizeZ).c_str());
 
-        auto gridKernel = mRunner.makeKernel("marching", "createGrid");
-        
-        clest::println("Passing LAS to the device");
-        auto lasBuffer = cl::Buffer(mRunner,
-                                    lasFile.pointData.begin(),
-                                    lasFile.pointData.end(),
-                                    true);
-
-        auto gridBuffer = mRunner.createBuffer("grid",
+        auto gridBuffer = mRunner.createBuffer(BUFFER_GRID,
                                                CL_MEM_READ_WRITE,
                                                sizeX * sizeY * sizeZ
-                                               * sizeof(uint32_t));
+                                               * sizeof(cl_uint));
 
+        auto lasBuffer = cl::Buffer(mRunner,
+                                    CL_MEM_READ_ONLY,
+                                    chunkSize * sizeof(cl_uint3));
+
+        auto gridKernel = mRunner.makeKernel(PROG_MARCHING, "createGrid");
         gridKernel.setArg(0, lasBuffer);
         gridKernel.setArg(1, gridBuffer);
-        command.enqueueNDRangeKernel(gridKernel,
-                                     cl::NDRange(0),
-                                     cl::NDRange(lasFile.pointData.size()));
-        grid::GridFile gridFile(lasFile, sizeX, sizeY, sizeZ);
-        auto gridC = gridFile.craw();
-        std::vector<cl_uint> gridG(sizeX * sizeY * sizeZ);
 
+        for (size_t chunk = 0; chunk < chunkCount; ++chunk) {
+          clest::println("Passing LAS chunk to the device {}/{}",
+                         chunk + 1,
+                         chunkCount);
+          size_t endPoint = std::min(((chunk + 1) * chunkSize),
+                                     lasFile.pointData.size());
+          cl::copy(command,
+                   lasFile.pointData.begin() + (chunk * chunkSize),
+                   lasFile.pointData.begin() + endPoint,
+                   lasBuffer);
+          auto range = endPoint - (chunk * chunkSize);
+
+          command.enqueueNDRangeKernel(gridKernel,
+                                       cl::NDRange(0),
+                                       cl::NDRange(range));
+          clest::println("Processing LAS chunk            {}/{}",
+                         chunk + 1,
+                         chunkCount);
+        }
       } catch (cl::Error & err) {
-        throw clest::Exception::build("OpenCL error: {} ({})",
+        throw clest::Exception::build("OpenCL error: {} ({} : {})",
                                       err.what(),
-                                      err.err());
+                                      err.err(),
+                                      ClRunner::getErrorString(err.err()));
       }
+
+    clest::println();
   }
 }

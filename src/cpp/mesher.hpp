@@ -7,7 +7,7 @@
 namespace clest {
   class Mesher {
   public:
-    Mesher(const grid::GridFile & grid,
+    Mesher(grid::GridFile & grid,
            cl_device_type type = CL_DEVICE_TYPE_GPU,
            const std::vector<const char*> & requirements = { "fp64" }) :
       mRunner(type, requirements) {
@@ -42,7 +42,7 @@ namespace clest {
     }
 
   private:
-    void load(const grid::GridFile & grid);
+    void load(grid::GridFile & grid);
     void load(las::LASFile<-2> & lasFile,
               unsigned short sizeX,
               unsigned short sizeY,

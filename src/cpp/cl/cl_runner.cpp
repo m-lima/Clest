@@ -50,9 +50,23 @@ namespace clest {
                      bestCount,
                      bestCount > 1 ? 's' : ' ');
 
+      mTotalMemory = SIZE_MAX;
+      mBufferMemory = SIZE_MAX;
       mDevices.reserve(bestCount);
       if (requirements.empty()) {
         platforms[bestIndex].getDevices(type, &mDevices);
+
+        for (auto device : mDevices) {
+          auto memory = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+          if (memory < mTotalMemory) {
+            mTotalMemory = memory;
+          }
+
+          memory = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+          if (memory < mBufferMemory) {
+            mBufferMemory = memory;
+          }
+        }
       } else {
         platforms[bestIndex].getDevices(type, &platformDevices);
         for (auto device : platformDevices) {
@@ -66,22 +80,33 @@ namespace clest {
           }
           if (compatible) {
             mDevices.push_back(device);
+            auto memory = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+            if (memory < mTotalMemory) {
+              mTotalMemory = memory;
+            }
+
+            memory = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+            if (memory < mBufferMemory) {
+              mBufferMemory = memory;
+            }
           }
         }
       }
 
       mContext = cl::Context(mDevices);
     } catch (cl::Error & err) {
-      throw clest::Exception::build("OpenCL error: {} ({})",
+      throw clest::Exception::build("OpenCL error: {} ({} : {})",
                                     err.what(),
-                                    err.err());
+                                    err.err(),
+                                    getErrorString(err.err()));
     }
+
+    clest::println();
   }
 
   void ClRunner::loadProgram(const std::string & name,
                              const std::string & path,
-                             const char * defines)
-  {
+                             const char * defines) {
     if (mDevices.empty()) {
       throw clest::Exception::build("Trying to load program without devices");
     }
@@ -127,14 +152,16 @@ namespace clest {
                            program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
           }
         }
-        throw clest::Exception::build("OpenCL error: {} ({})",
+        throw clest::Exception::build("OpenCL error: {} ({} : {})",
                                       err.what(),
-                                      err.err());
+                                      err.err(),
+                                      getErrorString(err.err()));
       }
     } catch (cl::Error & err) {
-      throw clest::Exception::build("OpenCL error: {} ({})",
+      throw clest::Exception::build("OpenCL error: {} ({} : {})",
                                     err.what(),
-                                    err.err());
+                                    err.err(),
+                                    getErrorString(err.err()));
     }
 
     stream.close();
@@ -151,15 +178,16 @@ namespace clest {
 
     if (mCommands.size() < deviceCount) {
       mCommands.reserve(deviceCount);
-      
+
       try {
         for (size_t i = mCommands.size(); i < deviceCount; ++i) {
           mCommands.emplace_back(mContext, mDevices[i]);
         }
       } catch (cl::Error & err) {
-        throw clest::Exception::build("OpenCL error: {} ({})",
+        throw clest::Exception::build("OpenCL error: {} ({} : {})",
                                       err.what(),
-                                      err.err());
+                                      err.err(),
+                                      getErrorString(err.err()));
       }
 
       if (mCommands.size() < deviceCount) {
@@ -205,18 +233,19 @@ namespace clest {
                      globalSize[0],
                      globalSize[1],
                      globalSize[2]);
-      clest::println(" * Local memory size:              {}",
+      clest::println(" * Local memory size:              {}B",
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_LOCAL_MEM_SIZE>(device));
       clest::println(" * Preferred group size multiple:  {}",
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device));
-      clest::println(" * Private memory size:            {}",
+      clest::println(" * Private memory size:            {}B",
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_PRIVATE_MEM_SIZE>(device));
       clest::println(" * Work group size:                {}",
                      kernel.getWorkGroupInfo
                      <CL_KERNEL_WORK_GROUP_SIZE>(device));
+      clest::println();
     }
 
     return kernel;
@@ -225,4 +254,5 @@ namespace clest {
   void ClRunner::releaseBuffer(const std::string & name) {
     mBuffers.erase(name);
   }
+
 }
