@@ -36,7 +36,7 @@ namespace clest {
         }
         clest::println("######## SIZE: {}", lasFile.pointDataCount());
         //lasFile.loadData();
-        lasFile.pointData = std::vector<las::PointData<-2>>(0xA0000);
+        lasFile.pointData = std::vector<las::PointData<-2>>(lasFile.pointDataCount());
         clest::println("###### ACTUAL: {}", lasFile.pointData.size());
         clest::println("####### BYTES: {}", sizeof(las::PointData<-2>) * lasFile.pointData.size());
         clest::println("######## SENT: {}", 448 * lasFile.pointData.size());
@@ -69,89 +69,48 @@ namespace clest {
         (lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset)
         / (lasFile.publicHeader.zScaleFactor));
 
-      //auto command = mRunner.commandQueues(1)[0];
-      //mRunner.loadProgram("marching",
-      //                    "opencl/marching.cl",
-      //                    fmt::format(" -D CONST_OFFSET=(float3){{{:f},{:f},{:f}}}"
-      //                                " -D CONST_STEP=(float3){{{:f},{:f},{:f}}}"
-      //                                " -D CONST_SIZE_X={:d}"
-      //                                " -D CONST_SIZE_Y={:d}"
-      //                                " -D CONST_SIZE_Z={:d}",
-      //                                xOffset,
-      //                                yOffset,
-      //                                zOffset,
-      //                                xStep,
-      //                                yStep,
-      //                                zStep,
-      //                                sizeX,
-      //                                sizeY,
-      //                                sizeZ).c_str());
+      auto command = mRunner.commandQueues(1)[0];
+      mRunner.loadProgram("marching",
+                          "opencl/marching.cl",
+                          fmt::format(" -D CONST_OFFSET=(float3){{{:f},{:f},{:f}}}"
+                                      " -D CONST_STEP=(float3){{{:f},{:f},{:f}}}"
+                                      " -D CONST_SIZE_X={:d}"
+                                      " -D CONST_SIZE_Y={:d}"
+                                      " -D CONST_SIZE_Z={:d}",
+                                      xOffset,
+                                      yOffset,
+                                      zOffset,
+                                      xStep,
+                                      yStep,
+                                      zStep,
+                                      sizeX,
+                                      sizeY,
+                                      sizeZ).c_str());
 
-      //auto gridKernel = mRunner.makeKernel
-      //  <cl::Buffer,
-      //  cl::Buffer>(
-      //    "marching",
-      //    "createGrid"
-      //    );
+      auto gridKernel = mRunner.makeKernel("marching", "createGrid");
 
-      //auto lasBuffer = cl::Buffer(mRunner,
-      //  CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
-      //  lasFile.pointData.size(),
-      //  lasFile.pointData.data());
+      auto lasBuffer = cl::Buffer(mRunner,
+        CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR,
+        lasFile.pointData.size(),
+        lasFile.pointData.data());
 
-      //struct GridInfo {
-      //  cl_float3 step;
-      //  cl_float3 offset;
-      //  cl_ushort3 size;
-      //};
-      //std::vector<GridInfo> localInfo;
-      //localInfo.emplace_back(GridInfo{ { xStep, yStep, zStep },
-      //                                 { xOffset, yOffset, zOffset },
-      //                                 { sizeX, sizeY, sizeZ } });
+      auto gridBuffer = cl::Buffer(mRunner,
+                                   lasFile.pointData.begin(),
+                                   lasFile.pointData.end(),
+                                   true);
 
-      //auto infoBuffer = cl::Buffer(mRunner, localInfo.begin(), localInfo.end(), true);
-
-      //auto gridBuffer = cl::Buffer(mRunner,
-      //                             lasFile.pointData.begin(),
-      //                             lasFile.pointData.end(),
-      //                             true);
-
-      //try {
-      //  gridKernel(cl::EnqueueArgs(command,
-      //                             cl::NDRange(0xA0000)),
-      //             lasBuffer,
-      //             gridBuffer);
-      //} catch (cl::Error & err) {
-      //  throw clest::Exception::build("OpenCL error: {} ({})",
-      //                                err.what(),
-      //                                err.err());
-      //}
-      //  
-      //command.finish();
-
-
-
-
-
-      //auto grid = grid::GridFile(lasFile, sizeX, sizeY, sizeZ);
-      //std::vector<uint32_t> gridV(sizeX * sizeY * sizeZ);
-      //cl::copy(command, gridBuffer, gridV.begin(), gridV.end());
-
-      //if (grid.craw()->size() != gridV.size()) {
-      //  clest::println(stderr,
-      //                 "Check does not match: [G: {} | C: {}]",
-      //                 gridV.size(),
-      //                 grid.craw()->size());
-      //}
-
-      //for (size_t i = 0; i < gridV.size(); ++i) {
-      //  if (gridV[i] != grid.craw()->at(i)) {
-      //    clest::println(stderr,
-      //                   "Value mismatch at ({}): [G: {} | C: {}]",
-      //                   i,
-      //                   gridV[i],
-      //                   grid.craw()->at(i));
-      //  }
-      //}
+      try {
+        gridKernel.setArg(0, lasBuffer);
+        gridKernel.setArg(1, gridBuffer);
+        command.enqueueNDRangeKernel(gridKernel,
+                                     cl::NDRange(0),
+                                     cl::NDRange(lasFile.pointData.size()));
+      } catch (cl::Error & err) {
+        throw clest::Exception::build("OpenCL error: {} ({})",
+                                      err.what(),
+                                      err.err());
+      }
+        
+      command.finish();
   }
 }

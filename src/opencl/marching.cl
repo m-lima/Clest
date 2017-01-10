@@ -16,6 +16,8 @@ void createGrid(const global uint3 * points,
   if (grid.y == CONST_SIZE_Y) grid.y--;
   if (grid.z == CONST_SIZE_Z) grid.z--;
 
+  printf("%d\n", get_global_id(0));
+
   atomic_inc(&output[grid.z + grid.y * CONST_SIZE_Z + grid.x * CONST_SIZE_Y * CONST_SIZE_Z]);
 }
 

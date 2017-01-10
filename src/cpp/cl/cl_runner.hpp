@@ -33,12 +33,16 @@ namespace clest {
     std::vector<cl::CommandQueue> commandQueues(int deviceCount);
     void releaseQueues();
 
+    cl::Kernel makeKernel(const std::string & program,
+                          const std::string & kernelName);
+
     template <typename ... T>
-    cl::make_kernel<T...> makeKernel(const std::string & program,
-                                     const std::string & kernelName) {
+    cl::make_kernel<T...> makeKernelFunctor(const std::string & program,
+                                            const std::string & kernelName) {
       auto builtProgram = mPrograms.find(program);
       if (builtProgram == mPrograms.end()) {
-        throw clest::Exception::build("No program has been loaded yet");
+        throw clest::Exception::build("No program named {} has been loaded yet",
+                                      program);
       }
 
       try {
@@ -51,8 +55,8 @@ namespace clest {
     }
 
     template <typename ... Args>
-    cl::Buffer & ClRunner::createBuffer(const std::string & name,
-                                        const Args & ... args) {
+    const cl::Buffer & ClRunner::createBuffer(const std::string & name,
+                                              const Args & ... args) {
       if (mBuffers.find(name) != mBuffers.end()) {
         throw clest::Exception::build("Trying to create a buffer with an"
                                       "existing name");
@@ -110,7 +114,7 @@ namespace clest {
               name = device->getInfo <CL_DEVICE_NAME>();
               _TRIMMER::trim(name);
               clest::println(" {} {}",
-                ((device + 1) != platformDevices.end() ? "├" : "└"),
+                             '*',
                              name);
             }
           } catch (...) {

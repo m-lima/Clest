@@ -177,6 +177,52 @@ namespace clest {
     mCommands = std::vector<cl::CommandQueue>(0);
   }
 
+  cl::Kernel ClRunner::makeKernel(const std::string & program,
+                                  const std::string & kernelName) {
+
+    auto builtProgram = mPrograms.find(program);
+    if (builtProgram == mPrograms.end()) {
+      throw clest::Exception::build("No program named {} has been loaded yet",
+                                    program);
+    }
+
+    cl::Kernel kernel(builtProgram->second, kernelName.c_str());
+
+    for (auto device : mDevices) {
+      clest::println("Kernel info for {}", device.getInfo<CL_DEVICE_NAME>());
+      auto compileWorkGroupSize =
+        kernel.getWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(device);
+      clest::println(" * Compile work group size:        {}, {}, {}",
+                     compileWorkGroupSize[0],
+                     compileWorkGroupSize[1],
+                     compileWorkGroupSize[2]);
+      uint16_t globalSize[3];
+      size_t yo;
+      clGetKernelWorkGroupInfo(kernel(),
+                               device(),
+                               CL_KERNEL_GLOBAL_WORK_SIZE,
+                               sizeof(globalSize),
+                               globalSize,
+                               &yo);
+      clest::println(" * Global work size:               {}, {}, {} - {}",
+                     globalSize[0],
+                     globalSize[1],
+                     globalSize[2], yo);
+      clest::println(" * Local memory size:              {}",
+                     kernel.getWorkGroupInfo
+                     <CL_KERNEL_LOCAL_MEM_SIZE>(device));
+      clest::println(" * Preferred group size multiple:  {}",
+                     kernel.getWorkGroupInfo
+                     <CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device));
+      clest::println(" * Private memory size:            {}",
+                     kernel.getWorkGroupInfo
+                     <CL_KERNEL_PRIVATE_MEM_SIZE>(device));
+      clest::println(" * Work group size:                {}",
+                     kernel.getWorkGroupInfo
+                     <CL_KERNEL_WORK_GROUP_SIZE>(device));
+    }
+  }
+
   void ClRunner::releaseBuffer(const std::string & name) {
     mBuffers.erase(name);
   }

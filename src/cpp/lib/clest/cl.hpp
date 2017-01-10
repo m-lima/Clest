@@ -40,8 +40,8 @@ namespace clest {
             name = device->getInfo <CL_DEVICE_NAME>();
             boost::trim(name);
             clest::println(" {} {}",
-              ((device + 1) != platformDevices.end() ? "├" : "└"),
-                       name);
+                           '*',
+                           name);
           }
         } catch (...) {
         }
