@@ -54,25 +54,25 @@ namespace clest {
     return "<invalid>";
   }
 
-  template <bool x64>
-  inline bool isBigEndian() {
-    if (x64) {
-      union {
-        uint64_t i;
-        char c[8];
-      } testValue = { 0x0102030405060708 };
-    } else {
-      union {
-        uint32_t i;
-        char c[4];
-      } testValue = { 0x01020304 };
-    }
+  //template <bool x64>
+  //inline bool isBigEndian() {
+  //  if (x64) {
+  //    union {
+  //      uint64_t i;
+  //      char c[8];
+  //    } testValue = { 0x0102030405060708 };
+  //  } else {
+  //    union {
+  //      uint32_t i;
+  //      char c[4];
+  //    } testValue = { 0x01020304 };
+  //  }
+  //
+  //  return testValue.c[0] == 1;
+  //}
 
-    return testValue.c[0] == 1;
-  }
-
-  inline const char * extractOption(const std::vector<const char*> args,
-                              const std::string & option) {
+  inline const char * extractOption(const std::vector<const char*> & args,
+                                    const std::string & option) {
     auto itr = std::find(args.cbegin(), args.cend(), option);
     if (itr != args.cend() && ++itr != args.cend()) {
       return *itr;
@@ -90,14 +90,14 @@ namespace clest {
     return 0;
   }
 
-  inline bool findOption(const std::vector<const char*> args,
-                         const std::string& option) {
+  inline bool findOption(const std::vector<const char*> & args,
+                         const std::string & option) {
     return std::find(args.cbegin(), args.cend(), option) != args.cend();
   }
 
   inline bool findOption(char * begin[],
                          char * end[],
-                         const std::string& option) {
+                         const std::string & option) {
     return std::find(begin, end, option) != end;
   }
 

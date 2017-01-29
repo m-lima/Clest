@@ -5,10 +5,31 @@
 #include <clest/ostream.hpp>
 
 #include "las/grid_file.hpp"
-#include "lewiner/MarchingCubes.h"
-#include "mesh/cube_marcher.hpp"
 #include "cl/cl_runner.hpp"
 #include "mesher.hpp"
+
+void printUsage() {
+  clest::println("Usage:\n"
+                 "clest LOADING -t threshold [-g | -s gridOutput] [-m meshOutput]\n"
+                 "LOADING:\n"
+                 "\t-l gridFile:\n"
+                 "\t\tLoad grid from file gridFile\n"
+                 "\t-c LASFile [-x size] [-y size] [-z size]:"
+                 "\t\tConvert LAS from file LASFiles "
+                 "and specify the size of the converted grid");
+}
+
+template <int N>
+void load(const std::string & path) {
+  las::LASFile<N> lasTest(path);
+  lasTest.loadHeaders();
+  auto start = std::chrono::high_resolution_clock::now();
+  lasTest.loadData();
+  auto end = std::chrono::high_resolution_clock::now();
+  clest::println("{}",
+                 std::chrono::duration_cast<std::chrono::nanoseconds>
+                 (end - start).count());
+}
 
 unsigned short extractSize(const char * sizeParam, const char axis) {
   unsigned size = 256;
@@ -35,194 +56,164 @@ unsigned short extractSize(const char * sizeParam, const char axis) {
   return size;
 }
 
-clest::Mesher getMesher(const std::vector<const char*> args) {
+template<clest::MesherDevice D>
+clest::Mesher<D> loadGrid(const char * loadPath) {
+  if (loadPath) {
+    clest::println("Loading existing grid from:\n"
+                   "{}\n",
+                   loadPath);
+
+    try {
+      clest::println();
+      return clest::Mesher<D>(loadPath);
+    } catch (...) {
+      clest::println(stderr,
+                     "The application could not proceed and is quitting");
+      std::exit(-1);
+    }
+
+    // Load switch was used, but no file was given
+  } else {
+    clest::println(stderr, "Error: No file path was given. Quitting..");
+    std::exit(-1);
+  }
+}
+
+template<clest::MesherDevice D>
+clest::Mesher<D> convertLas(const std::vector<const char*> & args) {
+  auto convertPath = clest::extractOption(args, "-c");
+  if (convertPath) {
+    clest::println("Converting into a grid from:\n{}", convertPath);
+    auto convertPath = clest::extractOption(args, "-c");
+
+    auto xParam = clest::extractOption(args, "-x");
+    auto yParam = clest::extractOption(args, "-y");
+    auto zParam = clest::extractOption(args, "-z");
+
+    unsigned short sizeX = extractSize(xParam, 'X');
+    unsigned short sizeY = extractSize(yParam, 'Y');
+    unsigned short sizeZ = extractSize(zParam, 'Z');
+
+    return clest::Mesher<D>(convertPath, sizeX, sizeY, sizeZ);
+  } else {
+    clest::println(stderr, "Error: No file path was given. Quitting..");
+    std::exit(-1);
+  }
+}
+
+template<clest::MesherDevice D>
+clest::Mesher<D> getMesher(const std::vector<const char*> & args) {
   // Load from an existing grid
   if (clest::findOption(args, "-l")) {
     clest::println("Load flag found. Ignoring all conversion flags");
 
     auto loadPath = clest::extractOption(args, "-l");
-    if (loadPath) {
-      clest::println("Loading existing grid from:\n"
-                     "{}\n",
-                     loadPath);
+    return loadGrid<D>(loadPath);
+  }
 
+  if (clest::findOption(args, "-c")) {
+    return convertLas<D>(args);
+  }
+
+  clest::println(stderr, "No valid parameters given.. Nothing to do");
+  std::exit(-1);
+}
+
+void saveGrid(const clest::Mesher<clest::GPU_DEVICE> & mesher,
+              const std::vector<const char*> & args) {
+  clest::println(stderr,
+                 "Cannot save grid when converting in the GPU "
+                 "(using -g)\nIgnoring save flag..");
+  clest::println();
+}
+
+void saveGrid(const clest::Mesher<clest::CPU_DEVICE> & mesher,
+              const std::vector<const char*> & args) {
+  if (clest::findOption(args, "-s")) {
+    clest::println("Saving grid");
+
+    auto savePath = clest::extractOption(args, "-s");
+    if (savePath && savePath[0] != '-') {
+      clest::println("Saving as the given name:\n{}", savePath);
+      mesher.grid().save(savePath);
+    } else {
+      savePath = clest::extractOption(args, "-l");
+      if (!savePath) {
+        savePath = clest::extractOption(args, "-c");
+      }
+
+      clest::println("Saving as the automatic name:\n{}.grid", savePath);
+      mesher.grid().save(fmt::format("{}.grid", savePath));
+    }
+  }
+}
+
+template<clest::MesherDevice D>
+void marchGrid(const clest::Mesher<D> & mesher,
+               const std::vector<const char*> & args) {
+  if (clest::findOption(args, "-m")) {
+    clest::println("Marching the grid..");
+
+    auto dividerParam = clest::extractOption(args, "-t");
+    float divider = 0.5f;
+    if (dividerParam) {
       try {
-        clest::println();
-        return clest::Mesher(grid::GridFile(loadPath));
+        int dividerPercentage = std::stoi(dividerParam);
+        if (dividerPercentage <= 0 || dividerPercentage >= 100) {
+          clest::println(stderr,
+                         "The divider parameters must be an integer "
+                         "greater than 0% and less than 100%\n"
+                         "Reverting to 50%");
+        } else {
+          divider = dividerPercentage / 100.0f;
+        }
       } catch (...) {
         clest::println(stderr,
-                       "The application could not proceed and is quitting");
-        std::exit(-1);
+                       "The divider parameters must be an integer "
+                       "greater than 0% and less than 100%\n"
+                       "Reverting to 50%");
       }
-
-    // Load switch was used, but no file was given
-    } else {
-      clest::println(stderr, "Error: No file path was given. Quitting..");
-      std::exit(-1);
     }
 
-  // Load from an existing LAS
-  } else if (clest::findOption(args, "-c")) {
-
-    auto convertPath = clest::extractOption(args, "-c");
-    if (convertPath) {
-      clest::println("Converting into a grid from:\n{}", convertPath);
-
-      //auto typeParam = clest::extractOption(args, "-t");
-      auto xParam = clest::extractOption(args, "-x");
-      auto yParam = clest::extractOption(args, "-y");
-      auto zParam = clest::extractOption(args, "-z");
-
-      //int type = extractType(typeParam, convertPath);
-      unsigned short sizeX = extractSize(xParam, 'X');
-      unsigned short sizeY = extractSize(yParam, 'Y');
-      unsigned short sizeZ = extractSize(zParam, 'Z');
-
-      if (clest::findOption(args, "-g")) {
-        if (clest::findOption(args, "-s")) {
-          clest::println(stderr, "Cannot save grid when converting in the GPU "
-                         "(using -g)\nIgnoring save flag..");
-        }
-        clest::println();
-        return clest::Mesher(convertPath, sizeX, sizeY, sizeZ);
-      }
-
-      clest::println("Creating grid..");
-
-      auto grid = grid::GridFile(las::LASFile<-2>(convertPath),
-                                 sizeX,
-                                 sizeY,
-                                 sizeZ);
-        //convertGrid(convertPath, type, sizeX, sizeY, sizeZ);
-
-      // Save grid
-      if (clest::findOption(args, "-s")) {
-        clest::println("Saving grid");
-
-        auto savePath = clest::extractOption(args, "-s");
-        if (savePath && savePath[0] != '-') {
-          clest::println("Saving as the given name:\n{}", savePath);
-          grid.save(savePath);
-        } else {
-          savePath = clest::extractOption(args, "-l");
-          if (!savePath) {
-            savePath = clest::extractOption(args, "-c");
-          }
-
-          clest::println("Saving as the automatic name:\n{}.grid", savePath);
-          grid.save(fmt::format("{}.grid", savePath));
-        }
-      }
-
-      return clest::Mesher(grid);
-
-    // Covert switch was used, but no file was given
+    auto savePath = clest::extractOption(args, "-m");
+    if (savePath && savePath[0] != '-') {
+      clest::println("Saving the mesh as the given name:\n{}", savePath);
+      mesher.performMarchingCubes(savePath, divider);
     } else {
-      clest::println(stderr, "Error: No file path was given. Quitting..");
-      std::exit(-1);
-    }
+      savePath = clest::extractOption(args, "-l");
+      if (!savePath) {
+        savePath = clest::extractOption(args, "-c");
+      }
 
-    // None of the switches were found
-  } else {
-    clest::println(stderr, "No valid parameters given.. Nothing to do");
-    std::exit(-1);
+      clest::println("Saving the mesh as the automatic name:\n{}.ply",
+                     savePath);
+      mesher.performMarchingCubes(fmt::format("{}.ply", savePath).c_str(),
+                                  divider);
+    }
   }
 }
 
-void performMarchingCubes(grid::GridFile & grid,
-                          const char * const path,
-                          float threshold) {
-  MarchingCubes marchingCubes;
-  marchingCubes.set_resolution(grid.sizeX(), grid.sizeY(), grid.sizeZ());
-  marchingCubes.init_all();
-  clest::println("MC: [{} {} {}]",
-                 marchingCubes.size_x(),
-                 marchingCubes.size_y(),
-                 marchingCubes.size_z());
-
-  for (int i = 0; i < grid.sizeX(); ++i) {
-    for (int j = 0; j < grid.sizeY(); ++j) {
-      for (int k = 0; k < grid.sizeZ(); ++k) {
-        marchingCubes.set_data(grid.data(i, j, k), i, j, k);
-      }
-    }
-  }
-  marchingCubes.run(grid.maxValue() * threshold);
-
-  marchingCubes.clean_temps();
-  marchingCubes.writePLY(path);
-
-  marchingCubes.clean_all();
-}
-
-template <int N>
-void load(const std::string & path) {
-  las::LASFile<N> lasTest(path);
-  lasTest.loadHeaders();
-  auto start = std::chrono::high_resolution_clock::now();
-  lasTest.loadData();
-  auto end = std::chrono::high_resolution_clock::now();
-  clest::println("{}",
-                 std::chrono::duration_cast<std::chrono::nanoseconds>
-                 (end - start).count());
-}
-
-int main(int argc, char * argv[]) {
-
-  std::vector<const char*> args(argv + 1, argv + argc);
-
-  /// Actual code
-  clest::ClRunner::printFull();
-  clest::println();
-
-  auto mesh = getMesher(args);
-
-  //// March grid
-  //if (clest::findOption(args, "-m")) {
-  //  clest::println("Marching the grid..");
-
-  //  auto dividerParam = clest::extractOption(args, "-d");
-  //  float divider = 0.5f;
-  //  if (dividerParam) {
-  //    try {
-  //      int dividerPercentage = std::stoi(dividerParam);
-  //      if (dividerPercentage <= 0 || dividerPercentage >= 100) {
-  //        clest::println(stderr,
-  //                       "The divider parameters must be an integer "
-  //                       "greater than 0% and less than 100%\n"
-  //                       "Reverting to 50%");
-  //      } else {
-  //        divider = dividerPercentage / 100.0f;
-  //      }
-  //    } catch (...) {
-  //      clest::println(stderr,
-  //                     "The divider parameters must be an integer "
-  //                     "greater than 0% and less than 100%\n"
-  //                     "Reverting to 50%");
-  //    }
-  //  }
-
-  //  auto savePath = clest::extractOption(args, "-m");
-  //  if (savePath && savePath[0] != '-') {
-  //    clest::println("Saving the mesh as the given name:\n{}", savePath);
-  //    performMarchingCubes(grid, savePath, divider);
-  //  } else {
-  //    savePath = clest::extractOption(args, "-l");
-  //    if (!savePath) {
-  //      savePath = clest::extractOption(args, "-c");
-  //    }
-
-  //    clest::println("Saving the mesh as the automatic name:\n{}.ply",
-  //                   savePath);
-  //    performMarchingCubes(grid,
-  //                         fmt::format("{}.ply", savePath).c_str(),
-  //                         divider);
-  //  }
-  //}
+template<clest::MesherDevice D>
+int templatedMain(const std::vector<const char*> & args) {
+  auto mesher = getMesher<D>(args);
+  saveGrid(mesher, args);
+  marchGrid(mesher, args);
 
   clest::println("Done!");
   std::cin.get();
   return 0;
 }
 
-//TODO: Test command-line args
+int main(int argc, char * argv[]) {
+
+  std::vector<const char*> args(argv + 1, argv + argc);
+    
+  clest::ClRunner::printFull();
+  clest::println();
+
+  if (clest::findOption(args, "-g")) {
+    return templatedMain<clest::GPU_DEVICE>(args);
+  } else {
+    return templatedMain<clest::CPU_DEVICE>(args);
+  }
+}

@@ -130,24 +130,28 @@ namespace clest {
 
       clest::println("Build log for {} ({})", name, path);
 
-#if defined(DEBUG) || defined(_DEBUG)
-      auto assembly = program.getInfo<CL_PROGRAM_BINARIES>();
-      clest::println("== Assembly:");
-      for (auto line : assembly) {
-        println("{}", line);
-      }
-#endif
       for (auto device : mDevices) {
-        clest::println("== Device {}:\n"
-                       "{}\n"
-                       "=========",
-                       device.getInfo<CL_DEVICE_NAME>(),
-                       program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+        auto buildInfo = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        if (!buildInfo.empty()) {
+          clest::println("== Device {}:\n"
+                         "{}\n"
+                         "=========",
+                         device.getInfo<CL_DEVICE_NAME>(),
+                         buildInfo);
+        }
       }
       clest::println();
 
       try {
         program.build(mDevices, defines);
+
+#if defined(DEBUG) || defined(_DEBUG)
+        auto assembly = program.getInfo<CL_PROGRAM_BINARIES>();
+        clest::println("== Assembly:");
+        for (auto line : assembly) {
+          println("{}", line);
+        }
+#endif
 
         mPrograms[name] = std::move(program);
       } catch (cl::Error & err) {

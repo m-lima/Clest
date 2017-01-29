@@ -46,6 +46,10 @@ namespace grid {
     uint32_t & data(unsigned int x, unsigned int y, unsigned int z) {
       return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];
     }
+    
+    uint32_t cData(unsigned int x, unsigned int y, unsigned int z) const {
+      return mData[z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ];
+    }
 
     const std::vector<uint32_t> * craw() const {
       return &mData;
