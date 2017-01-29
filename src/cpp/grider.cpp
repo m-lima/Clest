@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include <clest/util.hpp>
 #include <clest/ostream.hpp>
@@ -154,10 +155,23 @@ void performMarchingCubes(grid::GridFile & grid,
   marchingCubes.clean_all();
 }
 
+template <int N>
+void load(const std::string & path) {
+  las::LASFile<N> lasTest(path);
+  lasTest.loadHeaders();
+  auto start = std::chrono::high_resolution_clock::now();
+  lasTest.loadData();
+  auto end = std::chrono::high_resolution_clock::now();
+  clest::println("{}",
+                 std::chrono::duration_cast<std::chrono::nanoseconds>
+                 (end - start).count());
+}
+
 int main(int argc, char * argv[]) {
 
-  std::vector<const char*> args(argc - 1);
+  std::vector<const char*> args(argv + 1, argv + argc);
 
+  /// Actual code
   clest::ClRunner::printFull();
   clest::println();
 

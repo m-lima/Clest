@@ -129,6 +129,14 @@ namespace clest {
                     std::istreambuf_iterator<char>()));
 
       clest::println("Build log for {} ({})", name, path);
+
+#if defined(DEBUG) || defined(_DEBUG)
+      auto assembly = program.getInfo<CL_PROGRAM_BINARIES>();
+      clest::println("== Assembly:");
+      for (auto line : assembly) {
+        println("{}", line);
+      }
+#endif
       for (auto device : mDevices) {
         clest::println("== Device {}:\n"
                        "{}\n"
