@@ -171,7 +171,6 @@ set(CL_HPP
 
 set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/fractal.cl
-  ${OPENCL_SRC_DIR}/lop.cl
   ${OPENCL_SRC_DIR}/marching.cl
   ${OPENCL_SRC_DIR}/grider.cl
   )
