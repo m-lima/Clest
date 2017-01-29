@@ -9,14 +9,15 @@
 #include "mesher.hpp"
 
 void printUsage() {
-  clest::println("Usage:\n"
-                 "clest LOADING -t threshold [-g | -s gridOutput] [-m meshOutput]\n"
-                 "LOADING:\n"
-                 "\t-l gridFile:\n"
-                 "\t\tLoad grid from file gridFile\n"
-                 "\t-c LASFile [-x size] [-y size] [-z size]:"
-                 "\t\tConvert LAS from file LASFiles "
-                 "and specify the size of the converted grid");
+  clest::println(
+    "Usage:\n"
+    "clest LOADING -t threshold [-g | -s gridOutput] [-m [meshOutput]]\n"
+    "LOADING:\n"
+    "\t-l gridFile:\n"
+    "\t\tLoad grid from file gridFile\n"
+    "\t-c LASFile [-x size] [-y size] [-z size]:"
+    "\t\tConvert LAS from file LASFiles and specify the size of the converted grid"
+  );
 }
 
 template <int N>
@@ -58,6 +59,8 @@ unsigned short extractSize(const char * sizeParam, const char axis) {
 
 template<clest::MesherDevice D>
 clest::Mesher<D> loadGrid(const char * loadPath) {
+  clest::println("Load flag found. Ignoring all conversion flags");
+
   if (loadPath) {
     clest::println("Loading existing grid from:\n"
                    "{}\n",
@@ -105,8 +108,6 @@ template<clest::MesherDevice D>
 clest::Mesher<D> getMesher(const std::vector<const char*> & args) {
   // Load from an existing grid
   if (clest::findOption(args, "-l")) {
-    clest::println("Load flag found. Ignoring all conversion flags");
-
     auto loadPath = clest::extractOption(args, "-l");
     return loadGrid<D>(loadPath);
   }
@@ -129,22 +130,20 @@ void saveGrid(const clest::Mesher<clest::GPU_DEVICE> & mesher,
 
 void saveGrid(const clest::Mesher<clest::CPU_DEVICE> & mesher,
               const std::vector<const char*> & args) {
-  if (clest::findOption(args, "-s")) {
-    clest::println("Saving grid");
+  clest::println("Saving grid");
 
-    auto savePath = clest::extractOption(args, "-s");
-    if (savePath && savePath[0] != '-') {
-      clest::println("Saving as the given name:\n{}", savePath);
-      mesher.grid().save(savePath);
-    } else {
-      savePath = clest::extractOption(args, "-l");
-      if (!savePath) {
-        savePath = clest::extractOption(args, "-c");
-      }
-
-      clest::println("Saving as the automatic name:\n{}.grid", savePath);
-      mesher.grid().save(fmt::format("{}.grid", savePath));
+  auto savePath = clest::extractOption(args, "-s");
+  if (savePath && savePath[0] != '-') {
+    clest::println("Saving as the given name:\n{}", savePath);
+    mesher.grid().save(savePath);
+  } else {
+    savePath = clest::extractOption(args, "-l");
+    if (!savePath) {
+      savePath = clest::extractOption(args, "-c");
     }
+
+    clest::println("Saving as the automatic name:\n{}.grid", savePath);
+    mesher.grid().save(fmt::format("{}.grid", savePath));
   }
 }
 
@@ -196,7 +195,11 @@ void marchGrid(const clest::Mesher<D> & mesher,
 template<clest::MesherDevice D>
 int templatedMain(const std::vector<const char*> & args) {
   auto mesher = getMesher<D>(args);
-  saveGrid(mesher, args);
+
+  if (clest::findOption(args, "-s")) {
+    saveGrid(mesher, args);
+  }
+
   marchGrid(mesher, args);
 
   clest::println("Done!");

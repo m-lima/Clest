@@ -164,12 +164,16 @@ set(CL_SRC
 
 set(CL_HPP
   ${CPP_SRC_DIR}/cl/cl_runner.hpp
+  ${CPP_SRC_DIR}/cl/clest_program.hpp
+  ${CPP_SRC_DIR}/cl/grid_program.hpp
+  ${CPP_SRC_DIR}/cl/marching_program.hpp
   )
 
 set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/fractal.cl
   ${OPENCL_SRC_DIR}/lop.cl
   ${OPENCL_SRC_DIR}/marching.cl
+  ${OPENCL_SRC_DIR}/grider.cl
   )
 
 list(APPEND SOURCES ${LAS_SRC})

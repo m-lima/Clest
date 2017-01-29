@@ -2,12 +2,11 @@
 
 #include <clest/cl.hpp>
 
+#include "cl/grid_program.hpp"
 #include "lewiner/MarchingCubes.h"
 
 namespace {
   constexpr char BUFFER_GRID[] = "grid";
-  constexpr char PROG_MARCHING[] = "marching";
-  constexpr char PROG_PATH_MARCHING[] = "opencl/marching.cl";
 
   inline void checkMemory(size_t gridSize,
                    size_t maxMemory,
@@ -140,15 +139,7 @@ namespace clest {
 
     try {
       auto command = mRunner.commandQueues(1)[0];
-      mRunner.loadProgram(PROG_MARCHING,
-                          PROG_PATH_MARCHING,
-                          fmt::format(" -D CONST_OFFSET=(float3){{{:f},{:f},{:f}}}"
-                                      " -D CONST_STEP=(float3){{{:f},{:f},{:f}}}"
-                                      " -D CONST_SIZE_X={:d}"
-                                      " -D CONST_SIZE_Y={:d}"
-                                      " -D CONST_SIZE_Z={:d}"
-                                      " -D CONST_ISO=5",
-                                      xOffset,
+      mRunner.loadProgram(GridProgram(xOffset,
                                       yOffset,
                                       zOffset,
                                       xStep,
@@ -156,7 +147,7 @@ namespace clest {
                                       zStep,
                                       sizeX,
                                       sizeY,
-                                      sizeZ).c_str());
+                                      sizeZ));
 
       auto gridBuffer = mRunner.createBuffer(BUFFER_GRID,
                                              CL_MEM_READ_WRITE,
@@ -167,7 +158,7 @@ namespace clest {
                                   CL_MEM_READ_ONLY,
                                   chunkSize * sizeof(cl_uint3));
 
-      auto gridKernel = mRunner.makeKernel(PROG_MARCHING, "createGrid");
+      auto gridKernel = mRunner.makeKernel(GridProgram::NAME(), "createGrid");
       gridKernel.setArg(0, lasBuffer);
       gridKernel.setArg(1, gridBuffer);
 
@@ -196,6 +187,8 @@ namespace clest {
                                     err.err(),
                                     ClRunner::getErrorString(err.err()));
     }
+
+    mRunner.releaseProgram(GridProgram::NAME());
 
     clest::println();
   }

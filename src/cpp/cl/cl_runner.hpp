@@ -17,6 +17,8 @@
 #define _TRIMMER clest
 #endif
 
+#include "clest_program.hpp"
+
 namespace clest {
 
   class ClRunner {
@@ -25,9 +27,7 @@ namespace clest {
     ClRunner(cl_device_type type,
              const std::vector<const char *> & requirements);
 
-    void loadProgram(const std::string & name,
-                     const std::string & path,
-                     const char * defines = "");
+    void loadProgram(const ClestProgram & program);
     void releaseProgram(const std::string & name);
 
     std::vector<cl::CommandQueue> commandQueues(int deviceCount);

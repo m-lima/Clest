@@ -1,10 +1,20 @@
-//Set S
+//_____________________________________________________________________________
+// Create fractal with simple math
+//
+// output: Fractal output
+//_____________________________________________________________________________
 __kernel void fractalS(__global unsigned char* output) {
   unsigned long index = get_global_id(0);
   output[index]  = index & (index >> 8);
 }
+//_____________________________________________________________________________
 
-//Set P
+//_____________________________________________________________________________
+// Create fractal with extra math
+//
+// output: Fractal output
+// seed: Seed to avoid optimization
+//_____________________________________________________________________________
 __kernel void fractalP(__global unsigned char* output,
                       const unsigned char seed) {
   unsigned long index = get_global_id(0);
@@ -16,3 +26,4 @@ __kernel void fractalP(__global unsigned char* output,
   }
   output[index] = value;
 }
+//_____________________________________________________________________________

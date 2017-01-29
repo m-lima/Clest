@@ -104,35 +104,34 @@ namespace clest {
     clest::println();
   }
 
-  void ClRunner::loadProgram(const std::string & name,
-                             const std::string & path,
-                             const char * defines) {
+  void ClRunner::loadProgram(const ClestProgram & program) {
     if (mDevices.empty()) {
       throw clest::Exception::build("Trying to load program without devices");
     }
 
-    if (mPrograms.find(name) != mPrograms.end()) {
+    if (mPrograms.find(program.name()) != mPrograms.end()) {
       throw clest::Exception::build("Trying to create a program with an"
                                     "existing name");
     }
 
-    std::ifstream stream(path);
+    std::ifstream stream(program.path());
 
     if (!stream.is_open()) {
-      throw clest::Exception::build("Could not load program:\n{}", path);
+      throw clest::Exception::build("Could not load program:\n{}",
+                                    program.path());
     }
 
     try {
-      auto program = cl::Program(
+      auto clProgram = cl::Program(
         mContext,
         std::string(std::istreambuf_iterator<char>(stream),
                     std::istreambuf_iterator<char>()));
 
-      clest::println("Build log for {} ({})", name, path);
+      clest::println("Build log for {} ({})", program.name(), program.path());
 
       for (auto device : mDevices) {
-        auto buildInfo = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        if (!buildInfo.empty()) {
+        auto buildInfo = clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        if (buildInfo.size() > 1) {
           clest::println("== Device {}:\n"
                          "{}\n"
                          "=========",
@@ -143,17 +142,17 @@ namespace clest {
       clest::println();
 
       try {
-        program.build(mDevices, defines);
+        clProgram.build(mDevices, program.buildString());
 
 #if defined(DEBUG) || defined(_DEBUG)
-        auto assembly = program.getInfo<CL_PROGRAM_BINARIES>();
+        auto assembly = clProgram.getInfo<CL_PROGRAM_BINARIES>();
         clest::println("== Assembly:");
         for (auto line : assembly) {
           println("{}", line);
         }
 #endif
 
-        mPrograms[name] = std::move(program);
+        mPrograms[program.name()] = std::move(clProgram);
       } catch (cl::Error & err) {
         if (err.err() == CL_INVALID_PROGRAM_EXECUTABLE
             || err.err() == CL_BUILD_ERROR
@@ -161,7 +160,7 @@ namespace clest {
           for (auto device : mDevices) {
             clest::println(stderr,
                            "Build failure\n{}",
-                           program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+                           clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
           }
         }
         throw clest::Exception::build("OpenCL error: {} ({} : {})",
