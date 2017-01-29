@@ -14,7 +14,7 @@ endif()
 
 # Handle Mac's Clang
 if(APPLE)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+  set(CMAKE_CXX_FLAGS "-std=c++14 -stdlib=libc++")
 endif()
 
 # Make $HOME compatible with windows
@@ -48,7 +48,8 @@ if(WIN32)
   set(TBB_INSTALL_DIR "${ENV_HOME_DIR}/Lib/TBB/Current")
 
 else()
-  # set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
+  message(STATUS "Setting BOOST_ROOT: " "/usr/Local/Cellar/boost/1.61.0_1")
+  set(BOOST_ROOT "/usr/Local/Cellar/boost/1.61.0_1")
 endif()
 
 ##------------------------------------------------------------------------------
@@ -77,10 +78,10 @@ else()
 endif()
 
 # set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.62 OPTIONAL_COMPONENTS date_time)
+find_package(Boost OPTIONAL_COMPONENTS date_time)
 if (NOT Boost_FOUND)
   MESSAGE(STATUS "Skipping BOOST Components and trying header-only..")
-  find_package(Boost 1.62)
+  find_package(Boost)
 endif()
 if (Boost_FOUND)
   list(APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
@@ -227,7 +228,7 @@ add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 
 # Create project
 add_executable(clest ${SOURCES})
-set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
+set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 14)
 
 # Link with FIND_PACKAGE
 target_link_libraries(clest ${LIBRARIES})
