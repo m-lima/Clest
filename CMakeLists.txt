@@ -18,6 +18,17 @@ endif()
 message(STATUS "Using C: " ${CMAKE_C_COMPILER_ID})
 message(STATUS "Using CXX: " ${CMAKE_CXX_COMPILER_ID})
 
+# Set high warning levels
+if(MSVC)
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+endif()
+
 # Make $HOME compatible with windows
 STRING(REGEX REPLACE "\\\\" "/" ENV_HOME_DIR $ENV{HOME})
 
