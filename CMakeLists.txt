@@ -14,7 +14,7 @@ endif()
 
 # Handle Mac's Clang
 if(APPLE)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+  set(CMAKE_CXX_FLAGS "-std=c++14")
 endif()
 
 # Make $HOME compatible with windows
@@ -220,7 +220,7 @@ add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 
 # Create project
 add_executable(clest ${SOURCES})
-set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 11)
+set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 14)
 
 # Link with FIND_PACKAGE
 target_link_libraries(clest ${LIBRARIES})
