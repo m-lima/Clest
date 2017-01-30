@@ -193,8 +193,8 @@ namespace clest {
     clest::println();
   }
   
-  void Mesher<GPU_DEVICE>::performMarchingCubes(const char * const path,
-                                                float threshold) const {}
+  void Mesher<GPU_DEVICE>::performMarchingCubes(const char * const,
+                                                float) const {}
 
   void Mesher<CPU_DEVICE>::performMarchingCubes(const char * const path,
                                                 float threshold) const {
@@ -209,7 +209,10 @@ namespace clest {
     for (int i = 0; i < mGrid.sizeX(); ++i) {
       for (int j = 0; j < mGrid.sizeY(); ++j) {
         for (int k = 0; k < mGrid.sizeZ(); ++k) {
-          marchingCubes.set_data(mGrid.cData(i, j, k), i, j, k);
+          marchingCubes.set_data(static_cast<real>(mGrid.cData(i, j, k)),
+                                 i,
+                                 j,
+                                 k);
         }
       }
     }
