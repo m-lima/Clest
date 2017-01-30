@@ -36,7 +36,7 @@ namespace {
 
 namespace clest {
 
-  void Mesher<GPU_DEVICE>::load(grid::GridFile & grid) {
+  void Mesher<GPU_DEVICE>::load(grid::GridFile && grid) {
     size_t gridSize = grid.sizeX()
       * grid.sizeY()
       * grid.sizeZ()
@@ -44,7 +44,7 @@ namespace clest {
     auto maxMemory = mRunner.bufferMemory();
     auto bufferMemory = mRunner.bufferMemory();
     checkMemory(gridSize, maxMemory, bufferMemory);
-    
+
     mSizeX = grid.sizeX();
     mSizeY = grid.sizeY();
     mSizeZ = grid.sizeZ();
@@ -63,7 +63,7 @@ namespace clest {
     }
   }
 
-  void Mesher<GPU_DEVICE>::load(las::LASFile<-2> & lasFile,
+  void Mesher<GPU_DEVICE>::load(las::LASFile<-2> && lasFile,
                                 unsigned short sizeX,
                                 unsigned short sizeY,
                                 unsigned short sizeZ) {

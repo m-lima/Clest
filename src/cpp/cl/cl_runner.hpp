@@ -74,7 +74,7 @@ namespace clest {
       }
     }
 
-    const cl::Buffer & ClRunner::getBuffer(const std::string & name) const {
+    const cl::Buffer & getBuffer(const std::string & name) const {
       return mBuffers.at(name);
     }
     void releaseBuffer(const std::string & name);

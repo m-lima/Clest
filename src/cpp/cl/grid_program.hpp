@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <fmt\format.h>
+#include <fmt/format.h>
 
 #include "clest_program.hpp"
 
