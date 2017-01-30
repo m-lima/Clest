@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
-project(Clest CXX)
+project(Clest C CXX)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Current state
 if (WIN32)
@@ -12,10 +15,8 @@ if (APPLE)
   message(STATUS "APPLE")
 endif()
 
-# Handle Mac's Clang
-if(APPLE)
-  set(CMAKE_CXX_FLAGS "-std=c++14 -stdlib=libc++")
-endif()
+message(STATUS "Using C: " ${CMAKE_C_COMPILER_ID})
+message(STATUS "Using CXX: " ${CMAKE_CXX_COMPILER_ID})
 
 # Make $HOME compatible with windows
 STRING(REGEX REPLACE "\\\\" "/" ENV_HOME_DIR $ENV{HOME})
@@ -220,7 +221,6 @@ add_custom_command(OUTPUT always_execute COMMAND ${CMAKE_COMMAND} -E echo)
 
 # Create project
 add_executable(clest ${SOURCES})
-set_target_properties(clest PROPERTIES CXX_LANGUAGE_STANDARD 14)
 
 # Link with FIND_PACKAGE
 target_link_libraries(clest ${LIBRARIES})
