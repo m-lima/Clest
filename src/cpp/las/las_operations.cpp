@@ -1,5 +1,7 @@
 #include "las_operations.hpp"
 
+#include <algorithm>
+
 #include "las_file.hpp"
 #include "point_data.hpp"
 

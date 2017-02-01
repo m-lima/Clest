@@ -36,7 +36,7 @@ namespace {
 
 namespace clest {
 
-  void Mesher<GPU_DEVICE>::load(grid::GridFile & grid) {
+  void Mesher<GPU_DEVICE>::load(grid::GridFile && grid) {
     size_t gridSize = grid.sizeX()
       * grid.sizeY()
       * grid.sizeZ()
@@ -44,7 +44,7 @@ namespace clest {
     auto maxMemory = mRunner.bufferMemory();
     auto bufferMemory = mRunner.bufferMemory();
     checkMemory(gridSize, maxMemory, bufferMemory);
-    
+
     mSizeX = grid.sizeX();
     mSizeY = grid.sizeY();
     mSizeZ = grid.sizeZ();
@@ -63,7 +63,7 @@ namespace clest {
     }
   }
 
-  void Mesher<GPU_DEVICE>::load(las::LASFile<-2> & lasFile,
+  void Mesher<GPU_DEVICE>::load(las::LASFile<-2> && lasFile,
                                 unsigned short sizeX,
                                 unsigned short sizeY,
                                 unsigned short sizeZ) {
@@ -193,8 +193,8 @@ namespace clest {
     clest::println();
   }
   
-  void Mesher<GPU_DEVICE>::performMarchingCubes(const char * const path,
-                                                float threshold) const {}
+  void Mesher<GPU_DEVICE>::performMarchingCubes(const char * const,
+                                                float) const {}
 
   void Mesher<CPU_DEVICE>::performMarchingCubes(const char * const path,
                                                 float threshold) const {
@@ -209,7 +209,10 @@ namespace clest {
     for (int i = 0; i < mGrid.sizeX(); ++i) {
       for (int j = 0; j < mGrid.sizeY(); ++j) {
         for (int k = 0; k < mGrid.sizeZ(); ++k) {
-          marchingCubes.set_data(mGrid.cData(i, j, k), i, j, k);
+          marchingCubes.set_data(static_cast<real>(mGrid.cData(i, j, k)),
+                                 i,
+                                 j,
+                                 k);
         }
       }
     }

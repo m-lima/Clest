@@ -33,7 +33,7 @@ void load(const std::string & path) {
 }
 
 unsigned short extractSize(const char * sizeParam, const char axis) {
-  unsigned size = 256;
+  int size = 256;
   if (sizeParam) {
     try {
       size = std::stoi(sizeParam);
@@ -54,7 +54,7 @@ unsigned short extractSize(const char * sizeParam, const char axis) {
     }
   }
   clest::println("Using {} size of: {}", axis, size);
-  return size;
+  return static_cast<unsigned short>(size);
 }
 
 template<clest::MesherDevice D>
@@ -87,7 +87,6 @@ clest::Mesher<D> convertLas(const std::vector<const char*> & args) {
   auto convertPath = clest::extractOption(args, "-c");
   if (convertPath) {
     clest::println("Converting into a grid from:\n{}", convertPath);
-    auto convertPath = clest::extractOption(args, "-c");
 
     auto xParam = clest::extractOption(args, "-x");
     auto yParam = clest::extractOption(args, "-y");
@@ -120,8 +119,8 @@ clest::Mesher<D> getMesher(const std::vector<const char*> & args) {
   std::exit(-1);
 }
 
-void saveGrid(const clest::Mesher<clest::GPU_DEVICE> & mesher,
-              const std::vector<const char*> & args) {
+void saveGrid(const clest::Mesher<clest::GPU_DEVICE> &,
+              const std::vector<const char*> &) {
   clest::println(stderr,
                  "Cannot save grid when converting in the GPU "
                  "(using -g)\nIgnoring save flag..");

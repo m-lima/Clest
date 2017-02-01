@@ -22,12 +22,12 @@ namespace clest {
            unsigned short sizeX,
            unsigned short sizeY,
            unsigned short sizeZ) : mGrid(las, sizeX, sizeY, sizeZ) {};
-    Mesher(const std::string lasPath,
+    Mesher(const std::string & lasPath,
            unsigned short sizeX,
            unsigned short sizeY,
            unsigned short sizeZ) :
       mGrid(las::LASFile<-2>(lasPath), sizeX, sizeY, sizeZ) {};
-    
+
     const grid::GridFile & grid() const {
       return mGrid;
     }
@@ -46,7 +46,7 @@ namespace clest {
            cl_device_type type = CL_DEVICE_TYPE_GPU,
            const std::vector<const char*> & requirements = { "fp64" }) :
       mRunner(type, requirements) {
-      load(grid);
+      load(std::move(grid));
     }
 
     Mesher(const std::string & gridPath,
@@ -65,7 +65,7 @@ namespace clest {
            cl_device_type type = CL_DEVICE_TYPE_GPU,
            const std::vector<const char*> & requirements = { "fp64" }) :
       mRunner(type, requirements) {
-      load(las, sizeX, sizeY, sizeZ);
+      load(std::move(las), sizeX, sizeY, sizeZ);
     }
 
     Mesher(const std::string & lasPath,
@@ -81,8 +81,8 @@ namespace clest {
     void performMarchingCubes(const char * const path, float threshold) const;
 
   private:
-    void load(grid::GridFile & grid);
-    void load(las::LASFile<-2> & lasFile,
+    void load(grid::GridFile && grid);
+    void load(las::LASFile<-2> && lasFile,
               unsigned short sizeX,
               unsigned short sizeY,
               unsigned short sizeZ);

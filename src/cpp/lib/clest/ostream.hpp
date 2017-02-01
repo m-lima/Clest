@@ -35,7 +35,7 @@ namespace clest {
 
   template <typename ... Args>
   inline void println(std::FILE * file,
-                      char * format,
+                      const char * format,
                       const Args & ... args) {
     fmt::print(file, format, args...);
     fmt::print(file, "\n");

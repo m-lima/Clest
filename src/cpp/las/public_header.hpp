@@ -3,8 +3,6 @@
 #include <array>
 #include <fstream>
 
-using string = std::string;
-
 #pragma pack(push, 1)
 namespace las {
   struct PublicHeader {
