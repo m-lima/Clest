@@ -75,7 +75,7 @@ void MarchingCubes::run( real iso )
 {
 	clock_t time = clock() ;
 
-	compute_intersection_points( iso ) ;
+	//compute_intersection_points( iso ) ;
 
 	for( _k = 0 ; _k < _size_z-1 ; _k++ )
 	for( _j = 0 ; _j < _size_y-1 ; _j++ )
@@ -188,6 +188,17 @@ void MarchingCubes::clean_all()
 
 //_____________________________________________________________________________
 // Compute the intersection points
+//
+// MY INPUTS:
+// Cube represents the vertices
+// If close to the edges, 0 (the center value) will be used for the points
+// 1 = x++
+// 3 = y++
+// 4 = z++
+//
+// The fabs is capping the minimal value to FLT_EPSILON (disregarding sign)
+// 
+// This functions finds where the iso crossings are and adds a vertex there
 void MarchingCubes::compute_intersection_points( real iso )
 //-----------------------------------------------------------------------------
 {

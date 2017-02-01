@@ -1,0 +1,3 @@
+[ ] Append "main" to main classes
+[ ] Convert LUT to switch-case
+[ ] Add color

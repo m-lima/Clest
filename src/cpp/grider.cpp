@@ -11,7 +11,7 @@
 void printUsage() {
   clest::println(
     "Usage:\n"
-    "clest LOADING -t threshold [-g | -s gridOutput] [-m [meshOutput]]\n"
+    "clest LOADING [-t threshold] [-g | -s gridOutput] [-m [meshOutput]]\n"
     "LOADING:\n"
     "\t-l gridFile:\n"
     "\t\tLoad grid from file gridFile\n"

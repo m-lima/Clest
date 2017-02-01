@@ -10,6 +10,8 @@ inline uint getIndex(const ushort x,
   return z + y * CONST_SIZE_Z + x * CONST_SIZE_Y * CONST_SIZE_Z;
 }
 
+
+
 kernel
 void march(const global uint * grid,
            global volatile uint * output) {
@@ -46,7 +48,5 @@ void march(const global uint * grid,
   if (grid[getIndex(x, y - 1, z - 1)] > CONST_ISO) {
     classification += 128;
   }
-
-  output[0] = classification;
 }
 //_____________________________________________________________________________
