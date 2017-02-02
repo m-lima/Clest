@@ -76,8 +76,30 @@ namespace las {
   struct PointData;
 
   template<>
+  struct PointData<-3> {
+    static constexpr int FORMAT = -3;
+    static constexpr bool COLORED = true;
+    _PART_XYZ;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+    uint8_t padding;
+
+    PointData() = default;
+
+    PointData(uint32_t _x,
+              uint32_t _y,
+              uint32_t _z,
+              uint8_t _red,
+              uint8_t _green,
+              uint8_t _blue) :
+      x(_x), y(_y), z(_z), red(_red), green(_green), blue(_blue) {}
+  };
+
+  template<>
   struct PointData<-2> {
     static constexpr int FORMAT = -2;
+    static constexpr bool COLORED = false;
     _PART_XYZ;
     uint32_t padding;
   };
@@ -85,12 +107,14 @@ namespace las {
   template<>
   struct PointData<-1> {
     static constexpr int FORMAT = -1;
+    static constexpr bool COLORED = false;
     _PART_XYZ;
   };
 
   template <>
   struct PointData<0> {
     static constexpr int FORMAT = 0;
+    static constexpr bool COLORED = false;
     _PART_XYZ;
     _PART_BASIC;
   };
@@ -98,6 +122,7 @@ namespace las {
   template <>
   struct PointData<1> {
     static constexpr int FORMAT = 1;
+    static constexpr bool COLORED = false;
     _PART_XYZ;
     _PART_BASIC;
     double GPStime;
@@ -106,6 +131,7 @@ namespace las {
   template <>
   struct PointData<2> {
     static constexpr int FORMAT = 2;
+    static constexpr bool COLORED = true;
     _PART_XYZ;
     _PART_BASIC;
     _PART_RGB;
@@ -114,6 +140,7 @@ namespace las {
   template <>
   struct PointData<3> {
     static constexpr int FORMAT = 3;
+    static constexpr bool COLORED = true;
     _PART_XYZ;
     _PART_BASIC;
     double GPStime;
@@ -123,6 +150,7 @@ namespace las {
   template <>
   struct PointData<4> {
     static constexpr int FORMAT = 4;
+    static constexpr bool COLORED = false;
     _PART_XYZ;
     _PART_BASIC;
     double GPStime;
@@ -132,6 +160,7 @@ namespace las {
   template <>
   struct PointData<5> {
     static constexpr int FORMAT = 5;
+    static constexpr bool COLORED = true;
     _PART_XYZ;
     _PART_BASIC;
     double GPStime;

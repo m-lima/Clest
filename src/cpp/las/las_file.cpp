@@ -99,6 +99,84 @@ namespace {
     container.shrink_to_fit();
     return iCount;
   }
+
+  template <int N>
+  uint64_t _loadData(
+    uint16_t typeSize,
+    std::ifstream & in,
+    std::vector<las::PointData<-3>> & container,
+    uint64_t max
+  ) {
+    constexpr uint16_t BUFFER_SIZE = 8192;
+
+    // Clean up the container
+    // Even if loading chunks, the memory is supposed to be capped
+    container = std::vector<las::PointData<-3>>();
+    container.reserve(max);
+
+    // Prepare for reading
+    uint64_t count = 0;
+    uint64_t iCount = 0;
+    las::PointData<N> *base;
+    uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
+    char data[BUFFER_SIZE];
+
+    // While the stream is healthy and the `max` limit has not been reached
+    while (count < max && in.good()) {
+
+      // Load bytes into memory
+      in.read(data, blockSize);
+
+      // Iterate the buffer in `sizeof(PointData<N>)` steps
+      for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
+        base = reinterpret_cast<las::PointData<N>*>(data + 1);
+        count++;
+        container.emplace_back(base->x,
+                               base->y,
+                               base->z,
+                               static_cast<uint8_t>(base->red / 256),
+                               static_cast<uint8_t>(base->green / 256),
+                               static_cast<uint8_t>(base->blue / 256));
+        iCount++;
+      }
+    }
+    container.shrink_to_fit();
+    return iCount;
+  }
+
+  template <int N>
+  uint64_t _loadDataProxy(
+    int,
+    uint16_t typeSize,
+    std::ifstream & in,
+    std::vector<las::PointData<N>> & container,
+    uint64_t max,
+    const las::Limits<uint32_t> & limits
+  ) {
+    return _loadData(typeSize, in, container, max, limits);
+  }
+
+  template <>
+  uint64_t _loadDataProxy<-3>(
+    int format,
+    uint16_t typeSize,
+    std::ifstream & in,
+    std::vector<las::PointData<-3>> & container,
+    uint64_t max,
+    const las::Limits<uint32_t> &
+  ) {
+    switch (format) {
+      case 2:
+        return _loadData<2>(typeSize, in, container, max);
+      case 3:
+        return _loadData<3>(typeSize, in, container, max);
+      case 5:
+        return _loadData<5>(typeSize, in, container, max);
+      default:
+        throw clest::Exception::build("Trying to load colors from a colorless "
+                                      "las file");
+    }
+  }
 }
 
 namespace las {
@@ -184,21 +262,22 @@ namespace las {
 
     // Go to the point where the point data starts
     fileStream.seekg(publicHeader.offsetToPointData);
-    
+
     uint64_t size;
 
     // Load directly if `PointData<N>` matches what's stored in file
     if (limits.isMaxed()
         && publicHeader.pointDataRecordFormat == las::PointData<N>::FORMAT) {
-        pointData.resize(_pointDataCount);
-        fileStream.read(reinterpret_cast<char*>(&pointData[0]),
-                        _pointDataCount * sizeof(las::PointData<N>));
-        pointData.shrink_to_fit();
-        size = pointData.size();
+      pointData.resize(_pointDataCount);
+      fileStream.read(reinterpret_cast<char*>(&pointData[0]),
+                      _pointDataCount * sizeof(las::PointData<N>));
+      pointData.shrink_to_fit();
+      size = pointData.size();
     } else {
 
       // Call the actual iterator and loader
-      size = _loadData(
+      size = _loadDataProxy<N>(
+        publicHeader.pointDataRecordFormat,
         publicHeader.pointDataRecordLength,
         fileStream,
         pointData,
@@ -229,7 +308,7 @@ namespace las {
   template<int N>
   void LASFile<N>::save(std::string file) const {
     clest::guaranteeNewFile(file, "las");
-    
+
     // Prepare for writing
     std::ofstream fileStream(file, std::ofstream::out | std::ofstream::binary);
 
@@ -299,12 +378,13 @@ namespace las {
 #define __DECLARE_TEMPLATES(index)\
   template class LASFile<index>;
 
-  __DECLARE_TEMPLATES(-2)
-  __DECLARE_TEMPLATES(-1)
-  __DECLARE_TEMPLATES(0)
-  __DECLARE_TEMPLATES(1)
-  __DECLARE_TEMPLATES(2)
-  __DECLARE_TEMPLATES(3)
+  __DECLARE_TEMPLATES(-3)
+    __DECLARE_TEMPLATES(-2)
+    __DECLARE_TEMPLATES(-1)
+    __DECLARE_TEMPLATES(0)
+    __DECLARE_TEMPLATES(1)
+    __DECLARE_TEMPLATES(2)
+    __DECLARE_TEMPLATES(3)
 #undef __DECLARE_TEMPLATES
 
 }
