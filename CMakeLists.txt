@@ -156,7 +156,6 @@ set(LIB_HPP
   ${CPP_SRC_DIR}/lib/clest/ostream.hpp
   ${CPP_SRC_DIR}/lib/clest/util.hpp
   ${CPP_SRC_DIR}/lib/clest/cl.hpp
-  ${CPP_SRC_DIR}/lib/clest/las.hpp
   )
 
 set(LEWINER_SRC

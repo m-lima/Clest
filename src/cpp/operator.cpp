@@ -168,12 +168,19 @@ namespace {
 
     lasFile.loadHeaders();
 
-    _executeLoadAll(lasFile);
-    //_executeLoadChunks(lasFile);
-    //_executeSimplify(lasFile, 25);
-    //_executeColorize(lasFile);
-    //_executeCGALWLOP(lasFile, 1, -1, 1, false);
-    //returnValue = _executeCL();  
+    try {
+      _executeLoadAll(lasFile);
+      //_executeLoadChunks(lasFile);
+      //_executeSimplify(lasFile, 25);
+      //_executeColorize(lasFile);
+      _executeCGALWLOP(lasFile, 10, 1, 10, false);
+      //returnValue = _executeCL();  
+    } catch (std::exception &ex) {
+      std::cout << "CAUGHT::::::::::::" << std::endl;
+      std::cout << ex.what() << std::endl;
+    } catch (...) {
+      std::cout << "CAUGHT UNKOWN:::::" << std::endl;
+    }
 
     return returnValue;
   }
@@ -209,6 +216,7 @@ int main(int argc, char * argv[]) {
 
   if (!dummyLasFile.isValid()) {
     fmt::print(stderr,
+
                "Expected a valid LAS file, but {} seems to be corrupted.\n",
                dummyLasFile.filePath);
     return 1;
