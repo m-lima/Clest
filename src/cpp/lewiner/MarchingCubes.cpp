@@ -75,7 +75,7 @@ void MarchingCubes::run( real iso )
 {
 	clock_t time = clock() ;
 
-	//compute_intersection_points( iso ) ;
+	compute_intersection_points( iso ) ;
 
 	for( _k = 0 ; _k < _size_z-1 ; _k++ )
 	for( _j = 0 ; _j < _size_y-1 ; _j++ )
@@ -199,6 +199,8 @@ void MarchingCubes::clean_all()
 // The fabs is capping the minimal value to FLT_EPSILON (disregarding sign)
 // 
 // This functions finds where the iso crossings are and adds a vertex there
+//
+// This function is used by add_triangle()
 void MarchingCubes::compute_intersection_points( real iso )
 //-----------------------------------------------------------------------------
 {
