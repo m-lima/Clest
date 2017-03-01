@@ -5,8 +5,26 @@
 
 #include "grid_file.hpp"
 
-namespace grid {
+namespace {
 
+}
+
+namespace grid {
+  
+  struct LargeColor {
+    uint64_t red;
+    uint64_t green;
+    uint64_t blue;
+
+    Color normalize(uint32_t max) {
+      return Color {
+        static_cast<uint8_t>(red / max),
+        static_cast<uint8_t>(green / max),
+        static_cast<uint8_t>(blue / max)
+      };
+    }
+  };
+  
   void GridFile::save(std::string path) const {
     clest::guaranteeNewFile(path, "grid");
 
@@ -26,7 +44,14 @@ namespace grid {
     // No buffering being done. The vector is written directly
     fileStream.write(
       reinterpret_cast<const char*>(&mData[0]),
-      mData.size() * sizeof(uint16_t));
+      mData.size() * sizeof(uint32_t));
+
+    // Only write color if the data exists
+    if (mHeader.colorized) {
+      fileStream.write(
+        reinterpret_cast<const char*>(&mColor[0]),
+        mColor.size() * sizeof(Color));
+    }
 
     fileStream.close();
 
@@ -46,6 +71,17 @@ namespace grid {
     // Read directly into the header variable
     fileStream.read(reinterpret_cast<char*>(&mHeader), sizeof(GridHeader));
 
+    // Check magic number
+    {
+      char reference[] = "GRID";
+      for (int i = 0; i < mHeader.fileSignature.size(); i++) {
+        if (mHeader.fileSignature[i] != reference[i]) {
+          throw clest::Exception::build("The file {} seems to be corrupted",
+                                        path);
+        }
+      }
+    }
+
     // Check the integrity of the header
     if (mHeader.sizeX == 0
         || mHeader.sizeY == 0
@@ -58,7 +94,14 @@ namespace grid {
 
     // Load directly
     fileStream.read(reinterpret_cast<char*>(&mData[0]),
-                    mData.size() * sizeof(uint16_t));
+                    mData.size() * sizeof(uint32_t));
+
+    // Only load color if it exists
+    if (mHeader.colorized) {
+      mColor.resize(mHeader.sizeX * mHeader.sizeY * mHeader.sizeZ);
+      fileStream.read(reinterpret_cast<char*>(&mColor[0]),
+                      mColor.size() * sizeof(Color));
+    }
 
     fileStream.close();
   }
@@ -95,6 +138,11 @@ namespace grid {
     }
 
     // Update the header
+    mHeader.fileSignature[0] = 'G';
+    mHeader.fileSignature[1] = 'R';
+    mHeader.fileSignature[2] = 'I';
+    mHeader.fileSignature[3] = 'D';
+    mHeader.colorized = las::PointData<N>::COLORED;
     mHeader.sizeX = sizeX;
     mHeader.sizeY = sizeY;
     mHeader.sizeZ = sizeZ;
@@ -129,6 +177,11 @@ namespace grid {
 
     // Clear the data vector and preallocate the proper size
     mData = std::vector<uint32_t>(sizeX * sizeY * sizeZ);
+    mColor = std::vector<Color>(0);
+    if (mHeader.colorized) {
+      mColor.reserve(mData.size());
+    }
+    std::vector<LargeColor> colors(mHeader.colorized ? mData.size() : 0);
 
     // Iterate and increment the voxel values accordingly
     uint16_t localX;
@@ -145,12 +198,26 @@ namespace grid {
       if (localY == sizeY) localY--;
       if (localZ == sizeZ) localZ--;
 
-      if ((data(localX, localY, localZ)++) > max) {
+      auto localIndex = index(localX, localY, localZ);
+
+      if (las::PointData<N>::COLORED) {
+        //color.red += point.red;
+        //color.green += point.green;
+        //color.blue += point.blue;
+      }
+
+      if ((mData[localIndex]++) > max) {
         max++;
       }
     }
 
-    mHeader.maxValue = max > 0xFFFF ? 0xFFFF : static_cast<uint16_t>(max);
+    if (mHeader.colorized) {
+      for (size_t i = 0; i < mData.size(); ++i) {
+        mColor.emplace_back(colors[i].normalize(mData[i]));
+      }
+    }
+
+    mHeader.maxValue = max > 0xFFFF ? 0xFFFF : static_cast<uint32_t>(max);
   }
 
 #define __DECLARE_TEMPLATES(index)\
@@ -159,6 +226,7 @@ namespace grid {
                                   uint16_t sizeY,\
                                   uint16_t sizeZ);
 
+  __DECLARE_TEMPLATES(-3)
   __DECLARE_TEMPLATES(-2)
   __DECLARE_TEMPLATES(-1)
   __DECLARE_TEMPLATES(0)

@@ -7,18 +7,20 @@
 
 namespace {
   constexpr char BUFFER_GRID[] = "grid";
+  constexpr char BUFFER_GRID_COLOR[] = "gridColor";
 
-  inline void checkMemory(size_t gridSize,
-                   size_t maxMemory,
-                   size_t bufferMemory) {
-    if (maxMemory < gridSize) {
+  inline void checkMemory(size_t maxMemory,
+                          size_t bufferMemory,
+                          size_t gridSize,
+                          size_t gridColorSize) {
+    if (maxMemory < gridSize + gridColorSize) {
       throw clest::Exception::build("The OpenCL context does not have "
                                     "enough memory to handle the given "
                                     "operation.\n"
                                     "Max memory: {}\n"
                                     "Required:   {}",
                                     maxMemory,
-                                    gridSize);
+                                    gridSize * gridColorSize);
     }
 
     if (bufferMemory < gridSize) {
@@ -31,6 +33,17 @@ namespace {
                      bufferMemory,
                      gridSize);
     }
+
+    if (bufferMemory < gridColorSize) {
+      clest::println(stderr,
+                     "Warning: The dimensions for the grid colors are larger ",
+                     "than the maximum allocable size.\n"
+                     "This might result in instabilities\n"
+                     "Max allocable: {}B\n"
+                     "Required:      {}B",
+                     bufferMemory,
+                     gridColorSize);
+    }
   }
 }
 
@@ -41,9 +54,12 @@ namespace clest {
       * grid.sizeY()
       * grid.sizeZ()
       * sizeof(cl_uint);
+    size_t gridColorSize = grid.colorized()
+      ? grid.sizeX() * grid.sizeY() * grid.sizeZ() * sizeof(cl_uchar3)
+      : 0;
     auto maxMemory = mRunner.bufferMemory();
     auto bufferMemory = mRunner.bufferMemory();
-    checkMemory(gridSize, maxMemory, bufferMemory);
+    checkMemory(maxMemory, bufferMemory, gridSize, gridColorSize);
 
     mSizeX = grid.sizeX();
     mSizeY = grid.sizeY();
@@ -52,8 +68,12 @@ namespace clest {
     try {
       auto command = mRunner.commandQueues(1)[0];
       mRunner.createBuffer(BUFFER_GRID,
-                           grid.raw()->begin(),
-                           grid.raw()->end(),
+                           grid.dataRaw()->begin(),
+                           grid.dataRaw()->end(),
+                           true);
+      mRunner.createBuffer(BUFFER_GRID_COLOR,
+                           grid.colorRaw()->begin(),
+                           grid.colorRaw()->end(),
                            true);
     } catch (cl::Error & err) {
       throw clest::Exception::build("OpenCL error: {} ({} : {})",
@@ -63,24 +83,26 @@ namespace clest {
     }
   }
 
-  void Mesher<GPU_DEVICE>::load(las::LASFile<-2> && lasFile,
-                                unsigned short sizeX,
-                                unsigned short sizeY,
-                                unsigned short sizeZ) {
-
+  template <int N>
+  void Mesher<GPU_DEVICE>::load(las::LASFile<N> && lasFile) {
+    
     // Check validity of the parameters
-    if (sizeX == 0 || sizeY == 0 || sizeZ == 0) {
+    if (mSizeX == 0 || mSizeY == 0 || mSizeZ == 0) {
       throw clest::Exception::build(
         "The size [{}, {}, {}] is invalid and must be larger than zero",
-        sizeX,
-        sizeY,
-        sizeZ);
+        mSizeX,
+        mSizeY,
+        mSizeZ);
     }
 
-    auto gridSize = sizeX * sizeY * sizeZ * sizeof(cl_uint);
+    auto gridSize = mSizeX * mSizeY * mSizeZ * sizeof(cl_uint);
+    auto gridColorSize = mSizeX * mSizeY * mSizeZ * sizeof(cl_uchar3);
     auto maxMemory = mRunner.totalMemory();
     auto bufferMemory = mRunner.bufferMemory();
-    checkMemory(gridSize, maxMemory - sizeof(cl_uint3), bufferMemory);
+    checkMemory(maxMemory - sizeof(cl_uint4),
+                bufferMemory,
+                gridSize,
+                gridColorSize);
 
     // Ensure all the data is laoded
     if (!lasFile.isValidAndFullyLoaded()) {
@@ -98,7 +120,7 @@ namespace clest {
     }
 
     auto chunkSize = std::min(maxMemory - gridSize,
-                              bufferMemory) / sizeof(cl_uint3);
+                              bufferMemory) / sizeof(cl_uint4);
     size_t chunkCount = ((lasFile.pointData.size() - 1) / chunkSize) + 1;
 
     if (chunkCount > 1) {
@@ -107,32 +129,28 @@ namespace clest {
                      "to create the grid from a LAS file in one go.\n"
                      "Reverting to breaking the LAS in {} chunks of {}B",
                      chunkCount,
-                     chunkSize * sizeof(cl_uint3));
+                     chunkSize * sizeof(cl_uint4));
       clest::println();
     }
-
-    mSizeX = sizeX;
-    mSizeY = sizeY;
-    mSizeZ = sizeZ;
 
     // Prepare the step sizes for creating the voxels
     float xStep = static_cast<float>(
       (lasFile.publicHeader.maxX - lasFile.publicHeader.minX)
-      / (sizeX * lasFile.publicHeader.xScaleFactor));
+      / (mSizeX * lasFile.publicHeader.xScaleFactor));
     float xOffset = static_cast<float>(
       (lasFile.publicHeader.minX - lasFile.publicHeader.xOffset)
       / (lasFile.publicHeader.xScaleFactor));
 
     float yStep = static_cast<float>(
       (lasFile.publicHeader.maxY - lasFile.publicHeader.minY)
-      / (sizeY * lasFile.publicHeader.yScaleFactor));
+      / (mSizeY * lasFile.publicHeader.yScaleFactor));
     float yOffset = static_cast<float>(
       (lasFile.publicHeader.minY - lasFile.publicHeader.yOffset)
       / (lasFile.publicHeader.yScaleFactor));
 
     float zStep = static_cast<float>(
       (lasFile.publicHeader.maxZ - lasFile.publicHeader.minZ)
-      / (sizeZ * lasFile.publicHeader.zScaleFactor));
+      / (mSizeZ * lasFile.publicHeader.zScaleFactor));
     float zOffset = static_cast<float>(
       (lasFile.publicHeader.minZ - lasFile.publicHeader.zOffset)
       / (lasFile.publicHeader.zScaleFactor));
@@ -145,22 +163,34 @@ namespace clest {
                                       xStep,
                                       yStep,
                                       zStep,
-                                      sizeX,
-                                      sizeY,
-                                      sizeZ));
+                                      mSizeX,
+                                      mSizeY,
+                                      mSizeZ));
 
       auto gridBuffer = mRunner.createBuffer(BUFFER_GRID,
                                              CL_MEM_READ_WRITE,
-                                             sizeX * sizeY * sizeZ
+                                             mSizeX * mSizeY * mSizeZ
                                              * sizeof(cl_uint));
 
       auto lasBuffer = cl::Buffer(mRunner,
                                   CL_MEM_READ_ONLY,
-                                  chunkSize * sizeof(cl_uint3));
+                                  chunkSize * sizeof(cl_uint4));
 
-      auto gridKernel = mRunner.makeKernel(GridProgram::NAME(), "createGrid");
+      auto gridKernel = mRunner.makeKernel(GridProgram::NAME(),
+                                           las::PointData<N>::COLORED
+                                           ? "createGridColor"
+                                           : "createGrid");
+
       gridKernel.setArg(0, lasBuffer);
       gridKernel.setArg(1, gridBuffer);
+      
+      if (las::PointData<N>::COLORED) {
+        auto gridColorBuffer = mRunner.createBuffer(BUFFER_GRID_COLOR,
+                                                    CL_MEM_READ_WRITE,
+                                                    mSizeX * mSizeY * mSizeZ
+                                                    * sizeof(cl_uchar3));
+        gridKernel.setArg(2, gridColorBuffer);
+      }
 
       for (size_t chunk = 0; chunk < chunkCount; ++chunk) {
         clest::println("Passing LAS chunk to the device {}/{}",
@@ -192,7 +222,7 @@ namespace clest {
 
     clest::println();
   }
-  
+
   void Mesher<GPU_DEVICE>::performMarchingCubes(const char * const,
                                                 float) const {}
 
@@ -224,4 +254,8 @@ namespace clest {
     marchingCubes.clean_all();
   }
 
+  template void Mesher<GPU_DEVICE>::load(las::LASFile<-2> && lasFile);
+  template void Mesher<GPU_DEVICE>::load(las::LASFile<-3> && lasFile);
+
 }
+
