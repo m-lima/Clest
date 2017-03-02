@@ -5,12 +5,8 @@
 
 #include "grid_file.hpp"
 
-namespace {
-
-}
-
 namespace grid {
-  
+
   struct LargeColor {
     uint64_t red;
     uint64_t green;
@@ -24,6 +20,30 @@ namespace grid {
       };
     }
   };
+
+  template<int N>
+  void updateColor(const las::PointData<N> * const, LargeColor &) {}
+
+  template<>
+  void updateColor(const las::PointData<-3> * const point, LargeColor & color) {
+    color.red += point->red;
+    color.green += point->green;
+    color.blue += point->blue;
+  }
+
+  template<>
+  void updateColor(const las::PointData<2> * const point, LargeColor & color) {
+    color.red += point->red;
+    color.green += point->green;
+    color.blue += point->blue;
+  }
+
+  template<>
+  void updateColor(const las::PointData<3> * const point, LargeColor & color) {
+    color.red += point->red;
+    color.green += point->green;
+    color.blue += point->blue;
+  }
   
   void GridFile::save(std::string path) const {
     clest::guaranteeNewFile(path, "grid");
@@ -124,17 +144,9 @@ namespace grid {
         sizeZ);
     }
 
-    // Ensure all the data is laoded
-    if (!lasFile.isValidAndFullyLoaded()) {
-      if (!lasFile.isValid()) {
-        lasFile.loadHeaders();
-      }
-      lasFile.loadData();
-
-      if (!lasFile.isValidAndFullyLoaded()) {
-        throw clest::Exception::build("Could not load LAS file:\n{}",
-                                      lasFile.filePath);
-      }
+    // Ensure the header is loaded
+    if (!lasFile.isValid()) {
+      lasFile.loadHeaders();
     }
 
     // Update the header
@@ -188,36 +200,58 @@ namespace grid {
     uint16_t localY;
     uint16_t localZ;
     uint32_t max = 0;
-    
-    for (auto point : lasFile.pointData) {
-      localX = static_cast<uint16_t>((point.x - xOffset) / xStep);
-      localY = static_cast<uint16_t>((point.y - yOffset) / yStep);
-      localZ = static_cast<uint16_t>((point.z - zOffset) / zStep);
 
-      if (localX == sizeX) localX--;
-      if (localY == sizeY) localY--;
-      if (localZ == sizeZ) localZ--;
-
-      auto localIndex = index(localX, localY, localZ);
-
-      if (las::PointData<N>::COLORED) {
-        //color.red += point.red;
-        //color.green += point.green;
-        //color.blue += point.blue;
+    // Loading
+    {
+      std::ifstream in(lasFile.filePath, std::ifstream::binary);
+      if (!in.is_open()) {
+        throw clest::Exception::build("Could not open file {}",
+                                      lasFile.filePath);
       }
 
-      if ((mData[localIndex]++) > max) {
-        max++;
+      constexpr uint16_t BUFFER_SIZE = 8192;
+      uint16_t typeSize = lasFile.publicHeader.pointDataRecordLength;
+      uint16_t blockSize = BUFFER_SIZE - (BUFFER_SIZE % typeSize);
+      las::PointData<N> *base;
+      char data[BUFFER_SIZE];
+      uint64_t count = 0;
+      uint64_t expected = lasFile.pointDataCount();
+
+      while (count < expected && in.good()) {
+        in.read(data, blockSize);
+
+        for (size_t i = 0; i < blockSize && count < expected; i += typeSize) {
+          base = reinterpret_cast<las::PointData<N>*>(data + i);
+          count++;
+
+          localX = static_cast<uint16_t>((base->x - xOffset) / xStep);
+          localY = static_cast<uint16_t>((base->y - yOffset) / yStep);
+          localZ = static_cast<uint16_t>((base->z - zOffset) / zStep);
+
+          if (localX == sizeX) localX--;
+          if (localY == sizeY) localY--;
+          if (localZ == sizeZ) localZ--;
+
+          auto localIndex = index(localX, localY, localZ);
+
+          updateColor(base, colors[localIndex]);
+
+          if (mData[localIndex] < 0xFFFF) {
+            if ((mData[localIndex]++) > max) {
+              max++;
+            }
+          }
+        }
       }
     }
-
+    
     if (mHeader.colorized) {
       for (size_t i = 0; i < mData.size(); ++i) {
         mColor.emplace_back(colors[i].normalize(mData[i]));
       }
     }
 
-    mHeader.maxValue = max > 0xFFFF ? 0xFFFF : static_cast<uint32_t>(max);
+    mHeader.maxValue = max;
   }
 
 #define __DECLARE_TEMPLATES(index)\

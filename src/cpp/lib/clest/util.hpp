@@ -7,6 +7,20 @@
 #include <fmt/format.h>
 
 namespace clest {
+
+  template<bool C>
+  class DoIf {
+  public:
+    template<typename F>
+    static inline void execute(F f) {}
+  };
+
+  template<>
+  class DoIf<true> {
+  public:
+    template<typename F>
+    static inline void execute(F f) { f(); }
+  };
   
   inline void trim(std::string & str) {
     // Left trim

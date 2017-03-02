@@ -7,13 +7,11 @@
 
 namespace grid {
 
-#pragma pack(push, 1)
   struct Color {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
   };
-#pragma pack(pop)
 
   class GridFile {
   public:
@@ -46,6 +44,7 @@ namespace grid {
 
     inline size_t index(unsigned int x, unsigned int y, unsigned int z) const {
       return z + y * mHeader.sizeZ + x * mHeader.sizeY * mHeader.sizeZ;
+      //return x + y * mHeader.sizeX + z * mHeader.sizeX * mHeader.sizeY;
     }
 
     uint32_t & data(unsigned int x, unsigned int y, unsigned int z) {

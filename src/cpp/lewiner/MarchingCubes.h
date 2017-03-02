@@ -27,6 +27,11 @@ typedef   signed char schar ;
 /** isovalue alias */
 typedef        float real  ;
 
+/***MINE***/
+typedef struct {
+  uchar r, g, b;     /**< Vertex color */
+} Color;
+
 //-----------------------------------------------------------------------------
 // Vertex structure
 /** \struct Vertex "MarchingCubes.h" MarchingCubes
@@ -43,6 +48,8 @@ typedef struct
 {
   real  x,  y,  z ;  /**< Vertex coordinates */
   real nx, ny, nz ;  /**< Vertex normal */
+  /***MINE***/
+  Color color;
 } Vertex ;
 
 //-----------------------------------------------------------------------------
@@ -125,10 +132,15 @@ public :
    */
   inline void set_ext_data  ( real *data )
   { if( !_ext_data ) delete [] _data ;  _ext_data = data != NULL ;  if( _ext_data ) _data = data ; }
+  /***MINE***/
+  inline void set_ext_colors  ( Color *colors )
+  { if( !_ext_colors ) delete [] _colors ;  _ext_colors = colors != NULL ;  if( _ext_colors ) _colors = colors ; }
   /**
    * selects to allocate data
    */
   inline void set_int_data  () { _ext_data = false ;  _data = NULL ; }
+  /***MINE***/
+  inline void set_int_colors  () { _ext_colors = false ;  _colors = NULL ; }
 
   // Data access
   /**
@@ -138,6 +150,8 @@ public :
    * \param k height of the cube
    */
   inline const real get_data  ( const int i, const int j, const int k ) const { return _data[ i + j*_size_x + k*_size_x*_size_y] ; }
+  /***MINE***/
+  inline const Color get_color  ( const int i, const int j, const int k ) const { return _colors[ i + j*_size_x + k*_size_x*_size_y] ; }
   /**
    * sets a specific cube of the grid
    * \param val new value for the cube
@@ -146,6 +160,8 @@ public :
    * \param k height of the cube
    */
   inline void  set_data  ( const real val, const int i, const int j, const int k ) { _data[ i + j*_size_x + k*_size_x*_size_y] = val ; }
+  /***MINE***/
+  inline void  set_color ( const Color color, const int i, const int j, const int k ) { _colors[ i + j*_size_x + k*_size_x*_size_y] = color ; }
 
   // Data initialization
   /** inits temporary structures (must set sizes before call) : the grid and the vertex index per cube */
@@ -310,11 +326,15 @@ protected :
 protected :
   bool      _originalMC ;   /**< selects wether the algorithm will use the enhanced topologically controlled lookup table or the original MarchingCubes */
   bool      _ext_data   ;   /**< selects wether to allocate data or use data from another class */
+  /***MINE***/
+  bool      _ext_colors;
 
   int       _size_x     ;  /**< width  of the grid */
   int       _size_y     ;  /**< depth  of the grid */
   int       _size_z     ;  /**< height of the grid */
   real     *_data       ;  /**< implicit function values sampled on the grid */
+  /***MINE***/
+  Color    *_colors;
 
   int      *_x_verts    ;  /**< pre-computed vertex indices on the lower horizontal   edge of each cube */
   int      *_y_verts    ;  /**< pre-computed vertex indices on the lower longitudinal edge of each cube */

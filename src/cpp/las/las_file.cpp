@@ -129,7 +129,7 @@ namespace {
 
       // Iterate the buffer in `sizeof(PointData<N>)` steps
       for (size_t i = 0; i < blockSize && count < max; i += typeSize) {
-        base = reinterpret_cast<las::PointData<N>*>(data + 1);
+        base = reinterpret_cast<las::PointData<N>*>(data + i);
         count++;
         container.emplace_back(base->x,
                                base->y,
