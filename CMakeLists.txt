@@ -156,7 +156,6 @@ set(LIB_HPP
   ${CPP_SRC_DIR}/lib/clest/ostream.hpp
   ${CPP_SRC_DIR}/lib/clest/util.hpp
   ${CPP_SRC_DIR}/lib/clest/cl.hpp
-  ${CPP_SRC_DIR}/lib/clest/las.hpp
   )
 
 set(LEWINER_SRC
@@ -185,6 +184,7 @@ set(OPENCL_SRC
   ${OPENCL_SRC_DIR}/fractal.cl
   ${OPENCL_SRC_DIR}/marching.cl
   ${OPENCL_SRC_DIR}/grider.cl
+  ${OPENCL_SRC_DIR}/vertex.cl
   )
 
 list(APPEND SOURCES ${LAS_SRC})

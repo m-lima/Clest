@@ -39,10 +39,14 @@ MarchingCubes::MarchingCubes( const int size_x /*= -1*/, const int size_y /*= -1
 //-----------------------------------------------------------------------------
 	_originalMC(false),
 	_ext_data  (false),
+  /***MINE***/
+  _ext_colors(false),
 	_size_x    (size_x),
 	_size_y    (size_y),
 	_size_z    (size_z),
 	_data      ((real *)NULL),
+  /***MINE***/
+  _colors((Color *)NULL),
 	_x_verts   (( int *)NULL),
 	_y_verts   (( int *)NULL),
 	_z_verts   (( int *)NULL),
