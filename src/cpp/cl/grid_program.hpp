@@ -22,6 +22,7 @@ namespace clest {
                                " -D CONST_SIZE_X={:d}"
                                " -D CONST_SIZE_Y={:d}"
                                " -D CONST_SIZE_Z={:d}",
+                               " -D CONST_POINT_COUNT={:ud}",
                                xOffset,
                                yOffset,
                                zOffset,
