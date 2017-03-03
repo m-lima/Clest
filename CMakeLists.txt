@@ -159,11 +159,13 @@ set(LIB_HPP
   )
 
 set(LEWINER_SRC
+  ${CPP_SRC_DIR}/las/cube_marcher.cpp
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.cpp
   ${CPP_SRC_DIR}/lewiner/ply.c
   )
 
 set(LEWINER_HPP
+  ${CPP_SRC_DIR}/las/cube_marcher.hpp
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.h
   ${CPP_SRC_DIR}/lewiner/ply.h
   ${CPP_SRC_DIR}/lewiner/LookUpTable.h

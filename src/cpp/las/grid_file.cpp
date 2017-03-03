@@ -21,30 +21,23 @@ namespace grid {
     }
   };
 
-  template<int N>
-  void updateColor(const las::PointData<N> * const, LargeColor &) {}
+  template<bool C>
+  struct ColorUpdater {
+    template<int N>
+    static void update(const las::PointData<N> * const, LargeColor &) {}
+  };
 
   template<>
-  void updateColor(const las::PointData<-3> * const point, LargeColor & color) {
-    color.red += point->red;
-    color.green += point->green;
-    color.blue += point->blue;
-  }
+  struct ColorUpdater<true> {
+    template<int N>
+    static void update(const las::PointData<N> * const point,
+                       LargeColor & color) {
+      color.red += point->red;
+      color.green += point->green;
+      color.blue += point->blue;
+    }
+  };
 
-  template<>
-  void updateColor(const las::PointData<2> * const point, LargeColor & color) {
-    color.red += point->red;
-    color.green += point->green;
-    color.blue += point->blue;
-  }
-
-  template<>
-  void updateColor(const las::PointData<3> * const point, LargeColor & color) {
-    color.red += point->red;
-    color.green += point->green;
-    color.blue += point->blue;
-  }
-  
   void GridFile::save(std::string path) const {
     clest::guaranteeNewFile(path, "grid");
 
@@ -234,7 +227,8 @@ namespace grid {
 
           auto localIndex = index(localX, localY, localZ);
 
-          updateColor(base, colors[localIndex]);
+          ColorUpdater<las::PointData<N>::COLORED>::update(base,
+                                                           colors[localIndex]);
 
           if (mData[localIndex] < 0xFFFF) {
             if ((mData[localIndex]++) > max) {
