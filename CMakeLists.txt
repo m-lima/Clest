@@ -140,6 +140,7 @@ set(LAS_SRC
   ${CPP_SRC_DIR}/las/las_file.cpp
   ${CPP_SRC_DIR}/las/grid_file.cpp
   ${CPP_SRC_DIR}/las/las_operations.cpp
+  ${CPP_SRC_DIR}/las/cube_marcher.cpp
   )
 
 set(LAS_HPP
@@ -150,6 +151,7 @@ set(LAS_HPP
   ${CPP_SRC_DIR}/las/grid_file.hpp
   ${CPP_SRC_DIR}/las/las_operations.hpp
   ${CPP_SRC_DIR}/las/wlop_simplify_verbose.hpp
+  ${CPP_SRC_DIR}/las/cube_marcher.hpp
   )
 
 set(LIB_HPP
@@ -159,13 +161,11 @@ set(LIB_HPP
   )
 
 set(LEWINER_SRC
-  ${CPP_SRC_DIR}/las/cube_marcher.cpp
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.cpp
   ${CPP_SRC_DIR}/lewiner/ply.c
   )
 
 set(LEWINER_HPP
-  ${CPP_SRC_DIR}/las/cube_marcher.hpp
   ${CPP_SRC_DIR}/lewiner/MarchingCubes.h
   ${CPP_SRC_DIR}/lewiner/ply.h
   ${CPP_SRC_DIR}/lewiner/LookUpTable.h
